@@ -1,4 +1,4 @@
-const admin = require("../config/firebase");
+const firebaseAuth = require("../config/firebase");
 
 const User = require("../modules/user/user.model");
 
@@ -18,9 +18,7 @@ const authMiddleware = async (req, res, next) => {
             authHeader.split(" ")[1];
 
         const decoded =
-            await admin
-                .auth()
-                .verifyIdToken(token);
+            await firebaseAuth.verifyIdToken(token);
 
         const user =
             await User.findOne({

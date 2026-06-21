@@ -1,15 +1,25 @@
-const admin = require("firebase-admin");
+const {
+    cert,
+    getApps,
+    initializeApp,
+} = require("firebase-admin/app");
+const { getAuth } = require("firebase-admin/auth");
+
+const privateKey = process.env.FIREBASE_PRIVATE_KEY
+    .trim()
+    .replace(/^"(.*)",$/s, "$1")
+    .replace(/\\n/g, "\n");
 
 const serviceAccount = {
     projectId: process.env.FIREBASE_PROJECT_ID,
-
-    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
-
+    privateKey,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
 };
 
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-});
+const firebaseApp =
+    getApps()[0] ||
+    initializeApp({
+        credential: cert(serviceAccount),
+    });
 
-module.exports = admin;
+module.exports = getAuth(firebaseApp);

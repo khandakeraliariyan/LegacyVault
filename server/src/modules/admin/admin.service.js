@@ -27,6 +27,15 @@ const getDashboardStats = async () => {
     };
 };
 
+const getPendingClaims = async () => {
+    return await Claim.find({
+        status: "UNDER_REVIEW",
+    })
+        .populate("ownerId")
+        .populate("successorId");
+};
+
 module.exports = {
     getDashboardStats,
+    getPendingClaims
 };

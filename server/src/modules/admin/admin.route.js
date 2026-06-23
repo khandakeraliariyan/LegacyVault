@@ -10,4 +10,6 @@ const adminController = require("./admin.controller");
 
 router.get("/dashboard", authMiddleware, roleMiddleware("ADMIN"), adminController.getDashboard);
 
+router.get("/claims", authMiddleware, roleMiddleware("ADMIN"), adminController.getPendingClaims);
+
 module.exports = router;

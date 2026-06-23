@@ -14,6 +14,21 @@ const getDashboard = async (req, res, next) => {
     }
 };
 
+const getPendingClaims = async (req, res, next) => {
+    try {
+        const claims =
+            await adminService.getPendingClaims();
+
+        res.status(200).json({
+            success: true,
+            data: claims,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getDashboard,
+    getPendingClaims
 };

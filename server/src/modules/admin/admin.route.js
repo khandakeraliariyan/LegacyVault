@@ -12,4 +12,8 @@ router.get("/dashboard", authMiddleware, roleMiddleware("ADMIN"), adminControlle
 
 router.get("/claims", authMiddleware, roleMiddleware("ADMIN"), adminController.getPendingClaims);
 
+router.patch("/claims/:id/approve", authMiddleware, roleMiddleware("ADMIN"), adminController.approveClaim);
+
+router.patch("/claims/:id/reject", authMiddleware, roleMiddleware("ADMIN"), adminController.rejectClaim);
+
 module.exports = router;

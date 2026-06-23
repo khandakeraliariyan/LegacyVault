@@ -28,7 +28,54 @@ const getPendingClaims = async (req, res, next) => {
     }
 };
 
+const approveClaim = async (req, res, next) => {
+    try {
+        const claim =
+            await adminService.approveClaim(
+                req.params.id,
+                req.user._id
+            );
+
+        res.status(200).json({
+            success: true,
+
+            message:
+                "Claim approved successfully",
+
+            data: claim
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+const rejectClaim = async (req, res, next) => {
+    try {
+        const claim =
+            await adminService.rejectClaim(
+                req.params.id,
+                req.user._id,
+                req.body.reason
+            );
+
+        res.status(200).json({
+            success: true,
+
+            message:
+                "Claim rejected",
+
+            data: claim
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getDashboard,
-    getPendingClaims
+    getPendingClaims,
+    approveClaim,
+    rejectClaim
 };

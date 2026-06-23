@@ -68,9 +68,34 @@ const deleteSuccessor = async (req, res, next) => {
     }
 };
 
+const getSuccessorAccess = async (req, res, next) => {
+    try {
+        const { email } = req.query;
+
+        const result =
+            await successorService.getSuccessorAccess(
+                email
+            );
+
+        res.status(200).json({
+            success: true,
+            data: {
+                vaultAccessGranted:
+                    result.vaultAccessGranted,
+
+                accessGrantedAt:
+                    result.accessGrantedAt,
+            },
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     createSuccessor,
     getMySuccessor,
     updateSuccessor,
     deleteSuccessor,
+    getSuccessorAccess
 };

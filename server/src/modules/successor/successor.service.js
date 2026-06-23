@@ -48,9 +48,25 @@ const deleteSuccessor = async (userId) => {
     });
 };
 
+const getSuccessorAccess = async (successorEmail) => {
+    const successor =
+        await Successor.findOne({
+            email: successorEmail,
+        });
+
+    if (!successor) {
+        throw new Error(
+            "Successor not found"
+        );
+    }
+
+    return successor;
+};
+
 module.exports = {
     createSuccessor,
     getMySuccessor,
     updateSuccessor,
     deleteSuccessor,
+    getSuccessorAccess
 };

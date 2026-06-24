@@ -6,6 +6,8 @@ const Successor = require("../successor/successor.model");
 
 const verifyAnswers = require("./verifyAnswers");
 
+const { createAuditLog, } = require("../audit/audit.service");
+
 const createClaim =
     async payload => {
         const successor =
@@ -65,6 +67,17 @@ const createClaim =
                         ? "UNDER_REVIEW"
                         : "REJECTED",
             });
+
+        await createAuditLog({
+            actorId: null,
+            action: "CLAIM_SUBMITTED",
+            entity: "CLAIM",
+            entityId: claim._id,
+            metadata: {
+                score: claim.score,
+                status: claim.status,
+            },
+        });
 
         return claim;
     };

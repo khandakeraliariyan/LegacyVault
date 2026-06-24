@@ -4,6 +4,8 @@ const Document = require("./document.model");
 
 const streamifier = require("streamifier");
 
+const { createAuditLog, } = require("../audit/audit.service");
+
 const uploadDocument = async (userId, file, payload) => {
     const uploadResult = await new Promise((resolve, reject) => {
         const stream =
@@ -41,6 +43,13 @@ const uploadDocument = async (userId, file, payload) => {
             publicId:
                 uploadResult.public_id,
         });
+
+    await createAuditLog({
+        actorId: userId,
+        action: "DOCUMENT_UPLOADED",
+        entity: "DOCUMENT",
+        entityId: document._id,
+    });
 
     return document;
 };

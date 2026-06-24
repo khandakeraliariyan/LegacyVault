@@ -63,6 +63,19 @@ const claimSchema =
                 default: 0,
             },
 
+            reviewedBy: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "User"
+            },
+
+            reviewedAt: {
+                type: Date
+            },
+
+            reviewNote: {
+                type: String
+            },
+
             status: {
                 type: String,
 

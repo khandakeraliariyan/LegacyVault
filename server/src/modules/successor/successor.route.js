@@ -14,4 +14,6 @@ router.patch("/", authMiddleware, successorController.updateSuccessor);
 
 router.delete("/", authMiddleware, successorController.deleteSuccessor);
 
+router.get("/access", successorController.getSuccessorAccess);
+
 module.exports = router;

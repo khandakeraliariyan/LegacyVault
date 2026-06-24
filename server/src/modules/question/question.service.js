@@ -2,6 +2,8 @@ const bcrypt = require("bcryptjs");
 
 const Question = require("./question.model");
 
+const { createAuditLog, } = require("../audit/audit.service");
+
 const createQuestion = async (userId, payload) => {
     const hashedAnswer =
         await bcrypt.hash(
@@ -17,6 +19,13 @@ const createQuestion = async (userId, payload) => {
 
             answerHash: hashedAnswer,
         });
+
+    await createAuditLog({
+        actorId: userId,
+        action: "QUESTION_CREATED",
+        entity: "QUESTION",
+        entityId: question._id,
+    });
 
     return question;
 };

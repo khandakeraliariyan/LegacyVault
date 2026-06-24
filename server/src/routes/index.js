@@ -14,6 +14,8 @@ const finalWishRoutes = require("../modules/finalWish/finalWish.route");
 
 const claimRoutes = require("../modules/claim/claim.route");
 
+const adminRoutes = require("../modules/admin/admin.route");
+
 router.use("/auth", authRoutes);
 
 router.use("/successors", successorRoutes);
@@ -25,5 +27,7 @@ router.use("/documents", documentRoutes);
 router.use("/final-wishes", finalWishRoutes);
 
 router.use("/claims", claimRoutes);
+
+router.use("/admin", adminRoutes);
 
 module.exports = router;

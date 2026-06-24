@@ -36,6 +36,15 @@ const successorSchema = new mongoose.Schema(
             default: false,
         },
 
+        vaultAccessGranted: {
+            type: Boolean,
+            default: false
+        },
+
+        accessGrantedAt: {
+            type: Date
+        },
+        
         status: {
             type: String,
             enum: [

@@ -1,10 +1,16 @@
+import {
+  RouterProvider,
+} from "react-router-dom";
+
+import {
+  router,
+} from "./routes/router";
+
 function App() {
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <h1 className="text-4xl font-bold text-blue-600">
-        LegacyVault
-      </h1>
-    </div>
+    <RouterProvider
+      router={router}
+    />
   );
 }
 

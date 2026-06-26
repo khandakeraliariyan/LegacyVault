@@ -25,11 +25,17 @@ const getDashboardStats = async () => {
             status: "APPROVED",
         });
 
+    const rejectedClaims =
+        await Claim.countDocuments({
+            status: "REJECTED",
+        });
+
     return {
         totalUsers,
         totalClaims,
         pendingClaims,
         approvedClaims,
+        rejectedClaims,
     };
 };
 

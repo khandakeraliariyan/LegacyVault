@@ -92,10 +92,29 @@ const getSuccessorAccess = async (req, res, next) => {
     }
 };
 
+const getReleasedVault = async (req, res, next) => {
+    try {
+        const { email } = req.query;
+
+        const vault =
+            await successorService.getReleasedVault(
+                email
+            );
+
+        res.status(200).json({
+            success: true,
+            data: vault,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     createSuccessor,
     getMySuccessor,
     updateSuccessor,
     deleteSuccessor,
-    getSuccessorAccess
+    getSuccessorAccess,
+    getReleasedVault,
 };

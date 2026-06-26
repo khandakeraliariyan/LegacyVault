@@ -41,18 +41,10 @@ export const logoutUser = () => {
     return firebaseLogout();
 };
 
-export const backendLogin = async (
-    firebaseToken
-) => {
-
-    const res =
-        await api.post(
-            "/auth/firebase-login",
-            {
-                firebaseToken,
-            }
-        );
+export const backendLogin = async (firebaseToken) => {
+    const res = await api.post("/auth/firebase-login", {
+        token: firebaseToken,
+    });
 
     return res.data;
-
 };

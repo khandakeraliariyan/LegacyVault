@@ -16,4 +16,6 @@ router.delete("/", authMiddleware, successorController.deleteSuccessor);
 
 router.get("/access", successorController.getSuccessorAccess);
 
+router.get("/vault", successorController.getReleasedVault);
+
 module.exports = router;

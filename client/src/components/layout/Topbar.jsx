@@ -9,6 +9,7 @@ import useAuth from "../../hooks/useAuth";
 export default function Topbar() {
     const {
         user,
+        profile,
     } = useAuth();
 
     return (
@@ -37,7 +38,7 @@ export default function Topbar() {
                 <div className="flex items-center gap-3 border-l border-slate-200 pl-5">
                     <div className="text-right">
                         <p className="text-sm font-bold text-slate-800">
-                            {user?.displayName || "Alex Sterling"}
+                            {profile?.name || user?.displayName || "Vault User"}
                         </p>
                         <p className="text-[10px] font-bold uppercase text-slate-400">
                             Premium Member

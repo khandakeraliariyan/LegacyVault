@@ -19,160 +19,98 @@ import {
 
 import {
     exchangeFirebaseToken,
+    fetchCurrentUser,
 } from "../services/token.service";
 
-export const AuthContext =
-    createContext();
+import { removeToken } from "../utils/storage";
 
-export default function AuthProvider({
-    children,
-}) {
+export const AuthContext = createContext();
 
-    const [user, setUser] =
-        useState(null);
+export default function AuthProvider({ children }) {
+    const [user, setUser] = useState(null);
+    const [profile, setProfile] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-    const [loading, setLoading] =
-        useState(true);
+    const syncBackend = async (firebaseUser) => {
+        const firebaseToken = await firebaseUser.getIdToken();
 
-    const syncBackend =
-        async (firebaseUser) => {
+        await exchangeFirebaseToken(firebaseToken);
 
-            const firebaseToken =
-                await firebaseUser.getIdToken();
+        const currentUser = await fetchCurrentUser();
+        setProfile(currentUser);
 
-            const response =
-                await exchangeFirebaseToken(
-                    firebaseToken
-                );
+        return currentUser;
+    };
 
-            const accessToken =
-                response?.accessToken
-                ?? response?.data?.accessToken;
+    const refreshProfile = async () => {
+        if (!auth.currentUser) {
+            setProfile(null);
+            return null;
+        }
 
-            if (!accessToken) {
-                return;
-            }
+        const currentUser = await fetchCurrentUser();
+        setProfile(currentUser);
+        return currentUser;
+    };
 
-            localStorage.setItem(
-                "accessToken",
-                accessToken
-            );
+    const login = async (email, password) => {
+        const result = await loginUser(email, password);
+        await syncBackend(result.user);
+        return result;
+    };
 
-        };
+    const register = async (name, email, password) => {
+        const result = await registerUser(name, email, password);
+        await syncBackend(result.user);
+        return result;
+    };
 
-    const login =
-        async (
-            email,
-            password
-        ) => {
+    const googleSignIn = async () => {
+        const result = await googleLogin();
+        await syncBackend(result.user);
+        return result;
+    };
 
-            const result =
-                await loginUser(
-                    email,
-                    password
-                );
-
-            await syncBackend(
-                result.user
-            );
-
-            return result;
-
-        };
-
-    const register =
-        async (
-            name,
-            email,
-            password
-        ) => {
-
-            const result =
-                await registerUser(
-                    name,
-                    email,
-                    password
-                );
-
-            await syncBackend(
-                result.user
-            );
-
-            return result;
-
-        };
-
-    const googleSignIn =
-        async () => {
-
-            const result =
-                await googleLogin();
-
-            await syncBackend(
-                result.user
-            );
-
-            return result;
-
-        };
-
-    const logout =
-        async () => {
-
-            localStorage.removeItem(
-                "accessToken"
-            );
-
-            await logoutUser();
-
-        };
+    const logout = async () => {
+        removeToken();
+        setProfile(null);
+        await logoutUser();
+    };
 
     useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            setUser(currentUser);
 
-        const unsubscribe =
-            onAuthStateChanged(
-                auth,
-                async (
-                    currentUser
-                ) => {
-
-                    setUser(
-                        currentUser
-                    );
-
-                    setLoading(
-                        false
-                    );
-
+            if (currentUser) {
+                try {
+                    await syncBackend(currentUser);
+                } catch {
+                    setProfile(null);
                 }
-            );
+            } else {
+                setProfile(null);
+            }
+
+            setLoading(false);
+        });
 
         return unsubscribe;
-
     }, []);
 
     const value = {
-
         user,
-
+        profile,
         loading,
-
         login,
-
         register,
-
         logout,
-
         googleSignIn,
-
+        refreshProfile,
     };
 
     return (
-        <AuthContext.Provider
-            value={value}
-        >
+        <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );
-
 }

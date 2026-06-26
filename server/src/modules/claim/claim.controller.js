@@ -21,6 +21,26 @@ const createClaim =
         }
     };
 
+const getVerificationQuestions =
+    async (req, res, next) => {
+        try {
+            const { email } = req.query;
+
+            const questions =
+                await claimService.getVerificationQuestions(
+                    email
+                );
+
+            res.status(200).json({
+                success: true,
+                data: questions,
+            });
+        } catch (error) {
+            next(error);
+        }
+    };
+
 module.exports = {
     createClaim,
+    getVerificationQuestions,
 };

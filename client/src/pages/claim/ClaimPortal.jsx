@@ -11,7 +11,15 @@ import {
     Upload,
 } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+
+import { getApiErrorMessage } from "../../services/api";
+import {
+    getVerificationQuestions,
+    submitClaim,
+} from "../../services/claim.service";
+import { ROUTES } from "../../constants/routes";
 
 const steps = [
     { label: "Verify Identity", icon: Shield },
@@ -20,30 +28,78 @@ const steps = [
     { label: "Review & Submit", icon: CheckCircle2 },
 ];
 
-const relationships = [
-    "Spouse / Partner",
-    "Child",
-    "Sibling",
-    "Legal Trustee",
-    "Other Family Member",
-    "Other",
-];
-
 export default function ClaimPortal() {
+    const navigate = useNavigate();
     const [currentStep, setCurrentStep] = useState(0);
+    const [loading, setLoading] = useState(false);
+    const [questions, setQuestions] = useState([]);
+    const [answers, setAnswers] = useState({});
+    const [identityDocumentUrl, setIdentityDocumentUrl] = useState("");
+    const [submittedClaim, setSubmittedClaim] = useState(null);
     const [form, setForm] = useState({
-        email: "",
+        claimantName: "",
+        claimantEmail: "",
+        claimantPhone: "",
         relationship: "",
-        vaultId: "",
         agreed: false,
-        answers: ["", "", ""],
-        documents: [],
     });
 
     const update = (field, value) => setForm({ ...form, [field]: value });
 
-    const next = () => setCurrentStep((s) => Math.min(s + 1, steps.length - 1));
-    const back = () => setCurrentStep((s) => Math.max(s - 1, 0));
+    const loadQuestions = async () => {
+        setLoading(true);
+
+        try {
+            const data = await getVerificationQuestions(form.claimantEmail);
+            setQuestions(data);
+            setAnswers(Object.fromEntries(data.map((item) => [item._id, ""])));
+            setCurrentStep(1);
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, "Could not load verification questions"));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleIdentityContinue = async () => {
+        if (!form.claimantName || !form.claimantEmail || !form.claimantPhone || !form.relationship || !form.agreed) {
+            toast.error("Please complete all required fields");
+            return;
+        }
+
+        await loadQuestions();
+    };
+
+    const handleSubmit = async () => {
+        setLoading(true);
+
+        try {
+            const claim = await submitClaim({
+                claimantName: form.claimantName,
+                claimantEmail: form.claimantEmail,
+                claimantPhone: form.claimantPhone,
+                identityDocumentUrl: identityDocumentUrl || "https://legacyvault.local/identity-pending",
+                answers: questions.map((question) => ({
+                    questionId: question._id,
+                    answer: answers[question._id] || "",
+                })),
+            });
+
+            setSubmittedClaim(claim);
+            toast.success(`Claim submitted with status: ${claim.status}`);
+
+            if (claim.status === "APPROVED" || claim.status === "UNDER_REVIEW") {
+                navigate(`${ROUTES.VAULT_ACCESS}?email=${encodeURIComponent(form.claimantEmail)}`);
+            }
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, "Claim submission failed"));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const next = () => setCurrentStep((step) => Math.min(step + 1, steps.length - 1));
+    const back = () => setCurrentStep((step) => Math.max(step - 1, 0));
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-950">
@@ -70,11 +126,7 @@ export default function ClaimPortal() {
                         return (
                             <div key={step.label} className="flex flex-1 items-center">
                                 <div className="flex flex-col items-center">
-                                    <span
-                                        className={`grid size-10 place-items-center rounded-full ${
-                                            active || done ? "bg-emerald-700 text-white" : "bg-slate-200 text-slate-500"
-                                        }`}
-                                    >
+                                    <span className={`grid size-10 place-items-center rounded-full ${active || done ? "bg-emerald-700 text-white" : "bg-slate-200 text-slate-500"}`}>
                                         {done ? <Check size={18} /> : <Icon size={18} />}
                                     </span>
                                     <p className={`mt-2 hidden text-xs font-bold sm:block ${active ? "text-emerald-700 underline" : "text-slate-500"}`}>
@@ -90,48 +142,53 @@ export default function ClaimPortal() {
                 </nav>
 
                 <article className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-                    {currentStep === 0 && (
-                        <StepIdentity form={form} update={update} onContinue={next} />
-                    )}
-                    {currentStep === 1 && (
-                        <StepQuestions form={form} update={update} onContinue={next} onBack={back} />
-                    )}
-                    {currentStep === 2 && (
-                        <StepDocuments onContinue={next} onBack={back} />
-                    )}
-                    {currentStep === 3 && (
-                        <StepReview form={form} onBack={back} />
-                    )}
+                    {currentStep === 0 ? (
+                        <StepIdentity form={form} update={update} onContinue={handleIdentityContinue} loading={loading} />
+                    ) : null}
+                    {currentStep === 1 ? (
+                        <StepQuestions
+                            questions={questions}
+                            answers={answers}
+                            setAnswers={setAnswers}
+                            onContinue={next}
+                            onBack={back}
+                        />
+                    ) : null}
+                    {currentStep === 2 ? (
+                        <StepDocuments
+                            identityDocumentUrl={identityDocumentUrl}
+                            setIdentityDocumentUrl={setIdentityDocumentUrl}
+                            onContinue={next}
+                            onBack={back}
+                        />
+                    ) : null}
+                    {currentStep === 3 ? (
+                        <StepReview
+                            form={form}
+                            questions={questions}
+                            answers={answers}
+                            identityDocumentUrl={identityDocumentUrl}
+                            submittedClaim={submittedClaim}
+                            onBack={back}
+                            onSubmit={handleSubmit}
+                            loading={loading}
+                        />
+                    ) : null}
                 </article>
 
                 <div className="mt-6 flex items-center justify-between text-sm text-slate-500">
-                    <a href="#faq" className="inline-flex items-center gap-1 hover:text-emerald-700">
+                    <Link to="/dashboard/claims" className="inline-flex items-center gap-1 hover:text-emerald-700">
                         Need help with your claim? View FAQ
                         <ChevronRight size={14} />
-                    </a>
-                    <span>Reference ID: LV-992-CXQ</span>
+                    </Link>
+                    <span>Reference ID: LV-{Date.now().toString().slice(-6)}</span>
                 </div>
             </div>
-
-            <footer className="border-t border-slate-200 bg-white px-6 py-8">
-                <div className="mx-auto flex max-w-4xl flex-col gap-4 text-xs text-slate-500 md:flex-row md:items-center md:justify-between">
-                    <div>
-                        <p className="font-bold text-slate-900">LegacyVault</p>
-                        <p className="mt-1">© 2024 LegacyVault. All rights reserved. Secure & Encrypted.</p>
-                    </div>
-                    <nav className="flex flex-wrap gap-6">
-                        <a href="#privacy">Privacy Policy</a>
-                        <a href="#terms">Terms of Service</a>
-                        <a href="#security">Security Audit</a>
-                        <a href="#support">Support</a>
-                    </nav>
-                </div>
-            </footer>
         </div>
     );
 }
 
-function StepIdentity({ form, onContinue, update }) {
+function StepIdentity({ form, loading, onContinue, update }) {
     return (
         <>
             <div className="border-b border-slate-100 p-8">
@@ -140,56 +197,29 @@ function StepIdentity({ form, onContinue, update }) {
             </div>
             <div className="grid lg:grid-cols-[1fr_280px]">
                 <div className="space-y-6 p-8">
-                    <div>
-                        <label className="text-sm font-bold text-slate-800">Your Email Address</label>
-                        <input
-                            type="email"
-                            value={form.email}
-                            onChange={(e) => update("email", e.target.value)}
-                            placeholder="e.g. john.doe@example.com"
-                            className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-emerald-500"
-                        />
-                        <p className="mt-2 text-xs italic text-slate-500">We will use this to send a verification link.</p>
-                    </div>
+                    <Field label="Full Name" value={form.claimantName} onChange={(value) => update("claimantName", value)} placeholder="John Doe" />
+                    <Field label="Your Email Address" value={form.claimantEmail} onChange={(value) => update("claimantEmail", value)} placeholder="e.g. john.doe@example.com" helper="Must match the email registered as successor." />
+                    <Field label="Phone Number" value={form.claimantPhone} onChange={(value) => update("claimantPhone", value)} placeholder="+1 (555) 012-3456" />
                     <div>
                         <label className="text-sm font-bold text-slate-800">Relation to the Deceased</label>
                         <select
                             value={form.relationship}
-                            onChange={(e) => update("relationship", e.target.value)}
-                            className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-emerald-500"
+                            onChange={(event) => update("relationship", event.target.value)}
+                            className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none"
                         >
                             <option value="">Select relationship...</option>
-                            {relationships.map((rel) => (
+                            {["Spouse / Partner", "Child", "Sibling", "Legal Trustee", "Other"].map((rel) => (
                                 <option key={rel} value={rel}>{rel}</option>
                             ))}
                         </select>
                     </div>
-                    <div>
-                        <label className="text-sm font-bold text-slate-800">Deceased&apos;s Vault ID (Optional)</label>
-                        <input
-                            type="text"
-                            value={form.vaultId}
-                            onChange={(e) => update("vaultId", e.target.value)}
-                            placeholder="8-character alphanumeric code"
-                            className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-emerald-500"
-                        />
-                    </div>
                     <label className="flex cursor-pointer gap-3 text-sm leading-6 text-slate-600">
-                        <input
-                            type="checkbox"
-                            checked={form.agreed}
-                            onChange={(e) => update("agreed", e.target.checked)}
-                            className="mt-1 size-4 accent-emerald-700"
-                        />
+                        <input type="checkbox" checked={form.agreed} onChange={(event) => update("agreed", event.target.checked)} className="mt-1 size-4 accent-emerald-700" />
                         I confirm that I am initiating this claim in good faith and understand that providing false information is a legal violation under the LegacyVault Terms of Service.
                     </label>
                     <div className="flex gap-4 pt-2">
-                        <button
-                            onClick={onContinue}
-                            disabled={!form.email || !form.relationship || !form.agreed}
-                            className="inline-flex h-12 items-center gap-2 rounded-xl bg-emerald-700 px-8 font-bold text-white disabled:opacity-50"
-                        >
-                            Save and Continue
+                        <button onClick={onContinue} disabled={loading} className="inline-flex h-12 items-center gap-2 rounded-xl bg-emerald-700 px-8 font-bold text-white disabled:opacity-50">
+                            {loading ? "Loading..." : "Save and Continue"}
                             <ArrowRight size={16} />
                         </button>
                         <Link to="/" className="h-12 px-4 text-sm font-medium text-slate-500">Cancel</Link>
@@ -201,13 +231,7 @@ function StepIdentity({ form, onContinue, update }) {
     );
 }
 
-function StepQuestions({ form, onBack, onContinue, update }) {
-    const questions = [
-        "What was the name of your first childhood pet?",
-        "In what city did your parents meet?",
-        "What is the model of your first car?",
-    ];
-
+function StepQuestions({ answers, onBack, onContinue, questions, setAnswers }) {
     return (
         <>
             <div className="border-b border-slate-100 p-8">
@@ -215,18 +239,14 @@ function StepQuestions({ form, onBack, onContinue, update }) {
                 <p className="mt-2 text-sm text-slate-600">Answer the verification questions set by the vault owner.</p>
             </div>
             <div className="space-y-6 p-8">
-                {questions.map((q, i) => (
-                    <div key={q}>
-                        <label className="text-sm font-bold">{q}</label>
+                {questions.map((question) => (
+                    <div key={question._id}>
+                        <label className="text-sm font-bold">{question.question}</label>
                         <input
                             type="text"
-                            value={form.answers[i]}
-                            onChange={(e) => {
-                                const answers = [...form.answers];
-                                answers[i] = e.target.value;
-                                update("answers", answers);
-                            }}
-                            className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-emerald-500"
+                            value={answers[question._id] || ""}
+                            onChange={(event) => setAnswers({ ...answers, [question._id]: event.target.value })}
+                            className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none"
                         />
                     </div>
                 ))}
@@ -242,22 +262,24 @@ function StepQuestions({ form, onBack, onContinue, update }) {
     );
 }
 
-function StepDocuments({ onBack, onContinue }) {
+function StepDocuments({ identityDocumentUrl, onBack, onContinue, setIdentityDocumentUrl }) {
     return (
         <>
             <div className="border-b border-slate-100 p-8">
                 <h1 className="text-2xl font-bold">Step 3: Supporting Documents</h1>
-                <p className="mt-2 text-sm text-slate-600">Upload legal proof of relationship and government-issued identification.</p>
+                <p className="mt-2 text-sm text-slate-600">Provide a URL to your identity document or upload reference.</p>
             </div>
             <div className="p-8">
                 <div className="grid min-h-48 place-items-center rounded-2xl border-2 border-dashed border-slate-200 bg-blue-50/30">
-                    <div className="text-center">
+                    <div className="w-full max-w-lg px-6 text-center">
                         <Upload size={36} className="mx-auto text-emerald-700" />
-                        <p className="mt-4 font-bold">Drag & drop files here</p>
-                        <p className="mt-2 text-sm text-slate-500">PDF, JPG, or PNG up to 10MB</p>
-                        <button className="mt-4 rounded-xl bg-emerald-700 px-6 py-2 text-sm font-bold text-white">
-                            Browse Files
-                        </button>
+                        <p className="mt-4 font-bold">Identity Document URL</p>
+                        <input
+                            value={identityDocumentUrl}
+                            onChange={(event) => setIdentityDocumentUrl(event.target.value)}
+                            placeholder="https://example.com/identity-document.pdf"
+                            className="mt-4 h-12 w-full rounded-xl border border-slate-200 px-4 text-sm"
+                        />
                     </div>
                 </div>
                 <div className="mt-6 flex gap-4">
@@ -272,7 +294,7 @@ function StepDocuments({ onBack, onContinue }) {
     );
 }
 
-function StepReview({ form, onBack }) {
+function StepReview({ answers, form, identityDocumentUrl, loading, onBack, onSubmit, questions, submittedClaim }) {
     return (
         <>
             <div className="border-b border-slate-100 p-8">
@@ -280,20 +302,40 @@ function StepReview({ form, onBack }) {
                 <p className="mt-2 text-sm text-slate-600">Confirm your claim details before submission.</p>
             </div>
             <div className="space-y-4 p-8">
-                <ReviewRow label="Email" value={form.email} />
+                <ReviewRow label="Name" value={form.claimantName} />
+                <ReviewRow label="Email" value={form.claimantEmail} />
+                <ReviewRow label="Phone" value={form.claimantPhone} />
                 <ReviewRow label="Relationship" value={form.relationship} />
-                <ReviewRow label="Vault ID" value={form.vaultId || "Not provided"} />
-                <ReviewRow label="Security Answers" value={`${form.answers.filter(Boolean).length} of 3 answered`} />
-                <ReviewRow label="Documents" value="Ready for upload" />
+                <ReviewRow label="Security Answers" value={`${Object.values(answers).filter(Boolean).length} of ${questions.length} answered`} />
+                <ReviewRow label="Identity Document" value={identityDocumentUrl || "Pending upload reference"} />
+                {submittedClaim ? (
+                    <ReviewRow label="Claim Status" value={`${submittedClaim.status} (Score: ${submittedClaim.score}%)`} />
+                ) : null}
                 <div className="flex gap-4 pt-4">
-                    <button className="inline-flex h-12 items-center gap-2 rounded-xl bg-emerald-700 px-8 font-bold text-white">
-                        Submit Claim
+                    <button onClick={onSubmit} disabled={loading} className="inline-flex h-12 items-center gap-2 rounded-xl bg-emerald-700 px-8 font-bold text-white disabled:opacity-60">
+                        {loading ? "Submitting..." : "Submit Claim"}
                         <Check size={16} />
                     </button>
                     <button onClick={onBack} className="text-sm text-slate-500">Back</button>
                 </div>
             </div>
         </>
+    );
+}
+
+function Field({ helper, label, onChange, placeholder, value }) {
+    return (
+        <div>
+            <label className="text-sm font-bold text-slate-800">{label}</label>
+            <input
+                type="text"
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+                placeholder={placeholder}
+                className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-emerald-500"
+            />
+            {helper ? <p className="mt-2 text-xs italic text-slate-500">{helper}</p> : null}
+        </div>
     );
 }
 

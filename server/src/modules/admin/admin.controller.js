@@ -73,9 +73,24 @@ const rejectClaim = async (req, res, next) => {
     }
 };
 
+const getAuditLogs = async (req, res, next) => {
+    try {
+        const logs =
+            await adminService.getAuditLogs();
+
+        res.status(200).json({
+            success: true,
+            data: logs,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getDashboard,
     getPendingClaims,
     approveClaim,
-    rejectClaim
+    rejectClaim,
+    getAuditLogs,
 };

@@ -6,82 +6,65 @@ const Successor = require("../successor/successor.model");
 
 const verifyAnswers = require("./verifyAnswers");
 
-const { createAuditLog, } = require("../audit/audit.service");
+const { createAuditLog } = require("../audit/audit.service");
 
-const createClaim =
-    async payload => {
-        const successor =
-            await Successor.findOne({
-                email:
-                    payload.claimantEmail,
-            });
+const getVerificationQuestions = async (email) => {
+    const successor = await Successor.findOne({ email });
 
-        if (!successor) {
-            throw new Error(
-                "Successor not found"
-            );
-        }
+    if (!successor) {
+        throw new Error("Successor not found");
+    }
 
-        const questions =
-            await Question.find({
-                ownerId:
-                    successor.ownerId,
-            });
+    return Question.find({ ownerId: successor.ownerId }).select("_id question");
+};
 
-        const result =
-            await verifyAnswers(
-                questions,
-                payload.answers
-            );
+const createClaim = async (payload) => {
+    const successor = await Successor.findOne({
+        email: payload.claimantEmail,
+    });
 
-        const claim =
-            await Claim.create({
-                ownerId:
-                    successor.ownerId,
+    if (!successor) {
+        throw new Error("Successor not found");
+    }
 
-                successorId:
-                    successor._id,
+    const questions = await Question.find({
+        ownerId: successor.ownerId,
+    });
 
-                claimantName:
-                    payload.claimantName,
+    if (questions.length === 0) {
+        throw new Error("No verification questions configured for this vault");
+    }
 
-                claimantEmail:
-                    payload.claimantEmail,
+    const result = await verifyAnswers(questions, payload.answers);
 
-                claimantPhone:
-                    payload.claimantPhone,
+    const claim = await Claim.create({
+        ownerId: successor.ownerId,
+        successorId: successor._id,
+        claimantName: payload.claimantName,
+        claimantEmail: payload.claimantEmail,
+        claimantPhone: payload.claimantPhone,
+        identityDocumentUrl: payload.identityDocumentUrl,
+        score: result.score,
+        totalQuestions: result.total,
+        correctAnswers: result.correct,
+        status: result.score >= 70 ? "UNDER_REVIEW" : "REJECTED",
+    });
 
-                identityDocumentUrl:
-                    payload.identityDocumentUrl,
+    await createAuditLog({
+        actorId: null,
+        action: "CLAIM_SUBMITTED",
+        entity: "CLAIM",
+        entityId: claim._id,
+        metadata: {
+            score: claim.score,
+            status: claim.status,
+        },
+    });
 
-                score: result.score,
-
-                totalQuestions:
-                    result.total,
-
-                correctAnswers:
-                    result.correct,
-
-                status:
-                    result.score >= 70
-                        ? "UNDER_REVIEW"
-                        : "REJECTED",
-            });
-
-        await createAuditLog({
-            actorId: null,
-            action: "CLAIM_SUBMITTED",
-            entity: "CLAIM",
-            entityId: claim._id,
-            metadata: {
-                score: claim.score,
-                status: claim.status,
-            },
-        });
-
-        return claim;
-    };
+    return claim;
+};
 
 module.exports = {
     createClaim,
+    getVerificationQuestions,
 };

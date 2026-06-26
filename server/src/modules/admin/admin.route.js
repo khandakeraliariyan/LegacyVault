@@ -16,4 +16,6 @@ router.patch("/claims/:id/approve", authMiddleware, roleMiddleware("ADMIN"), adm
 
 router.patch("/claims/:id/reject", authMiddleware, roleMiddleware("ADMIN"), adminController.rejectClaim);
 
+router.get("/audit-logs", authMiddleware, roleMiddleware("ADMIN"), adminController.getAuditLogs);
+
 module.exports = router;

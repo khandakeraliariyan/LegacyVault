@@ -1,50 +1,17 @@
-import {
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    signOut,
-    GoogleAuthProvider,
-    signInWithPopup,
-    updateProfile,
-} from "firebase/auth";
+import api from "./api";
 
-import { auth } from "../firebase/firebase.config";
-
-const googleProvider = new GoogleAuthProvider();
-
-export const loginUser = (email, password) => {
-    return signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-    );
-};
-
-export const registerUser = async (
-    name,
-    email,
-    password
+export const backendLogin = async (
+    firebaseToken
 ) => {
-    const result =
-        await createUserWithEmailAndPassword(
-            auth,
-            email,
-            password
+
+    const res =
+        await api.post(
+            "/auth/firebase-login",
+            {
+                firebaseToken,
+            }
         );
 
-    await updateProfile(result.user, {
-        displayName: name,
-    });
+    return res.data;
 
-    return result;
-};
-
-export const googleLogin = () => {
-    return signInWithPopup(
-        auth,
-        googleProvider
-    );
-};
-
-export const logoutUser = () => {
-    return signOut(auth);
 };

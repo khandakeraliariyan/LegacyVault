@@ -42,6 +42,11 @@ const featureCards = [
         title: "Future Messages",
         text: "Write letters or record videos that will be delivered on anniversaries or life milestones.",
     },
+    {
+        icon: CheckCircle2,
+        title: "Legal Integration",
+        text: "Connect with accredited legal partners for optional secondary verification of high-value asset transfers.",
+    },
 ];
 
 export default function Home() {
@@ -76,7 +81,7 @@ function Header() {
                         to="/register"
                         className="rounded-lg bg-emerald-800 px-5 py-2 font-bold text-white"
                     >
-                        Quick Add
+                        Get App
                     </Link>
                 </nav>
                 <div className="flex items-center gap-4 text-slate-700">
@@ -314,22 +319,44 @@ function Testimonials() {
 }
 
 function Faq() {
+    const items = [
+        {
+            question: "What happens if I forget my master key?",
+            answer: "Because we use zero-knowledge encryption, we do not store your master key. We recommend using a recovery phrase stored in a physical safety deposit box as a failsafe.",
+            open: true,
+        },
+        {
+            question: "How do you verify a successor's claim?",
+            answer: "Claims combine identity verification, personalized security questions, supporting legal documents, and optional admin review before vault access is granted.",
+        },
+        {
+            question: "Is my data stored in plain text?",
+            answer: "No. All documents, wishes, and messages are encrypted with AES-256 before they leave your device. LegacyVault operates on a zero-knowledge architecture.",
+        },
+        {
+            question: "How much storage is included for free?",
+            answer: "Every vault includes 1GB of encrypted storage at no cost. Pro plans offer expanded capacity and additional successor slots.",
+        },
+        {
+            question: "Can I update my final wishes after creating them?",
+            answer: "Yes. You can edit, categorize, or delete wishes at any time. All changes are logged in your audit trail and re-encrypted immediately.",
+        },
+    ];
+
     return (
         <section className="mx-auto max-w-3xl px-5 py-10 text-center">
             <h2 className="text-xl font-medium">Common Questions</h2>
             <div className="mt-8 space-y-4 text-left">
-                <details className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200" open>
-                    <summary className="cursor-pointer font-medium">What happens if I forget my master key?</summary>
-                    <p className="mt-4 text-sm leading-6 text-slate-600">
-                        Because we use zero-knowledge encryption, we do not store your master key. We recommend using a recovery phrase stored in a physical safety deposit box as a failsafe.
-                    </p>
-                </details>
-                <details className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-                    <summary className="cursor-pointer font-medium">How do you verify a successor's claim?</summary>
-                    <p className="mt-4 text-sm leading-6 text-slate-600">
-                        Claims can combine inactivity windows, identity checks, trusted contacts, and optional legal professional review.
-                    </p>
-                </details>
+                {items.map((item) => (
+                    <details
+                        key={item.question}
+                        className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200"
+                        open={item.open}
+                    >
+                        <summary className="cursor-pointer font-medium">{item.question}</summary>
+                        <p className="mt-4 text-sm leading-6 text-slate-600">{item.answer}</p>
+                    </details>
+                ))}
             </div>
         </section>
     );

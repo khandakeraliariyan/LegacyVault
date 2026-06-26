@@ -12,4 +12,6 @@ export const ROUTES = {
 
     CLAIM: "/claim",
 
+    VAULT_ACCESS: "/vault-access",
+
 };

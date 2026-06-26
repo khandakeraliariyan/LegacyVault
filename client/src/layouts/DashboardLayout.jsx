@@ -1,5 +1,6 @@
 import { Outlet } from "react-router-dom";
 
+import DashboardFooter from "../components/layout/DashboardFooter";
 import Sidebar from "../components/layout/Sidebar";
 import Topbar from "../components/layout/Topbar";
 
@@ -14,6 +15,8 @@ export default function DashboardLayout() {
                 <section className="flex-1 px-6 py-8 lg:px-8">
                     <Outlet />
                 </section>
+
+                <DashboardFooter />
             </main>
         </div>
     );

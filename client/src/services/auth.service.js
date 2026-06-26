@@ -1,44 +1,45 @@
 import api from "./api";
 import {
     firebaseGoogleLogin,
-    firebaseLogin,
     firebaseLogout,
-    firebaseRegister,
 } from "./firebase.service";
+import { saveToken } from "../utils/storage";
 
-export const loginUser = (
-    email,
-    password
-) => {
-    return firebaseLogin(
+export const loginUser = async (email, password) => {
+    const response = await api.post("/auth/login", {
         email,
-        password
-    );
+        password,
+    });
+
+    const data = response.data.data;
+    saveToken(data.idToken);
+
+    return data;
 };
 
-export const registerUser = async (
-    name,
-    email,
-    password
-) => {
-    const user =
-        await firebaseRegister(
-            name,
-            email,
-            password
-        );
+export const registerUser = async (name, email, password) => {
+    const response = await api.post("/auth/register", {
+        name,
+        email,
+        password,
+    });
 
-    return {
-        user,
-    };
+    const data = response.data.data;
+    saveToken(data.idToken);
+
+    return data;
 };
 
 export const googleLogin = () => {
     return firebaseGoogleLogin();
 };
 
-export const logoutUser = () => {
-    return firebaseLogout();
+export const logoutUser = async () => {
+    try {
+        await firebaseLogout();
+    } catch {
+        // Ignore if Firebase client session was never created.
+    }
 };
 
 export const backendLogin = async (firebaseToken) => {

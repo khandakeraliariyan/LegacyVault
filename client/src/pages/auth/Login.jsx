@@ -14,6 +14,8 @@ import {
 import toast from "react-hot-toast";
 
 import useAuth from "../../hooks/useAuth";
+import { getApiErrorMessage } from "../../services/api";
+import { mapFirebaseAuthError } from "../../utils/firebaseErrors";
 
 function BrandMark() {
     return (
@@ -78,7 +80,7 @@ export default function Login() {
                 toast.success("Welcome back to your vault.");
                 navigate("/dashboard");
             } catch (error) {
-                toast.error(error?.message ?? "Unable to sign in.");
+                toast.error(mapFirebaseAuthError(error) || getApiErrorMessage(error, "Unable to sign in."));
             } finally {
                 setLoading(false);
             }
@@ -93,7 +95,7 @@ export default function Login() {
                 toast.success("Signed in with Google.");
                 navigate("/dashboard");
             } catch (error) {
-                toast.error(error?.message ?? "Google sign-in failed.");
+                toast.error(mapFirebaseAuthError(error) || getApiErrorMessage(error, "Google sign-in failed."));
             } finally {
                 setLoading(false);
             }

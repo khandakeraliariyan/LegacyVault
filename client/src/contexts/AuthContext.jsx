@@ -45,9 +45,17 @@ export default function AuthProvider({
                     firebaseToken
                 );
 
+            const accessToken =
+                response?.accessToken
+                ?? response?.data?.accessToken;
+
+            if (!accessToken) {
+                return;
+            }
+
             localStorage.setItem(
                 "accessToken",
-                response.data.accessToken
+                accessToken
             );
 
         };

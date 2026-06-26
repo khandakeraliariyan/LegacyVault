@@ -15,6 +15,8 @@ import {
 import toast from "react-hot-toast";
 
 import useAuth from "../../hooks/useAuth";
+import { getApiErrorMessage } from "../../services/api";
+import { mapFirebaseAuthError } from "../../utils/firebaseErrors";
 
 export default function Register() {
     const navigate =
@@ -69,7 +71,7 @@ export default function Register() {
                 toast.success("Your secure vault is ready.");
                 navigate("/dashboard");
             } catch (error) {
-                toast.error(error?.message ?? "Unable to create your vault.");
+                toast.error(mapFirebaseAuthError(error) || getApiErrorMessage(error, "Unable to create your vault."));
             } finally {
                 setLoading(false);
             }
@@ -84,7 +86,7 @@ export default function Register() {
                 toast.success("Your Google vault is ready.");
                 navigate("/dashboard");
             } catch (error) {
-                toast.error(error?.message ?? "Google sign-up failed.");
+                toast.error(mapFirebaseAuthError(error) || getApiErrorMessage(error, "Google sign-up failed."));
             } finally {
                 setLoading(false);
             }

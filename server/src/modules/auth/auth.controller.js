@@ -20,6 +20,45 @@ const firebaseLogin = async (req, res, next) => {
     }
 };
 
+const loginWithEmail = async (req, res, next) => {
+    try {
+        const { email, password } = req.body;
+
+        const result = await authService.loginWithEmail(
+            email,
+            password
+        );
+
+        res.status(200).json({
+            success: true,
+            message: "Login successful",
+            data: result,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const registerWithEmail = async (req, res, next) => {
+    try {
+        const { name, email, password } = req.body;
+
+        const result = await authService.registerWithEmail(
+            name,
+            email,
+            password
+        );
+
+        res.status(201).json({
+            success: true,
+            message: "Registration successful",
+            data: result,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 const getMe = async (req, res, next) => {
     try {
         const user = req.user;
@@ -35,5 +74,7 @@ const getMe = async (req, res, next) => {
 
 module.exports = {
     firebaseLogin,
+    loginWithEmail,
+    registerWithEmail,
     getMe,
 };

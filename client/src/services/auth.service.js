@@ -1,5 +1,7 @@
 import api from "./api";
 import {
+    firebaseLogin,
+    firebaseRegister,
     firebaseGoogleLogin,
     firebaseLogout,
     firebaseConfirmPasswordReset,
@@ -9,28 +11,45 @@ import {
 import { saveToken } from "../utils/storage";
 
 export const loginUser = async (email, password) => {
-    const response = await api.post("/auth/login", {
+    const credential = await firebaseLogin(
         email,
-        password,
-    });
+        password
+    );
 
-    const data = response.data.data;
-    saveToken(data.idToken);
+    const idToken =
+        await credential.user.getIdToken();
 
-    return data;
+    saveToken(idToken);
+
+    const data =
+        await backendLogin(idToken);
+
+    return {
+        ...data.data,
+        idToken,
+    };
 };
 
 export const registerUser = async (name, email, password) => {
-    const response = await api.post("/auth/register", {
-        name,
-        email,
-        password,
-    });
+    const firebaseUser =
+        await firebaseRegister(
+            name,
+            email,
+            password
+        );
 
-    const data = response.data.data;
-    saveToken(data.idToken);
+    const idToken =
+        await firebaseUser.getIdToken();
 
-    return data;
+    saveToken(idToken);
+
+    const data =
+        await backendLogin(idToken);
+
+    return {
+        ...data.data,
+        idToken,
+    };
 };
 
 export const googleLogin = () => {

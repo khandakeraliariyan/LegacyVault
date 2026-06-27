@@ -9,7 +9,7 @@ const authMiddleware = async (req, res, next) => {
         const authHeader =
             req.headers.authorization;
 
-        if (!authHeader) {
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
             return res.status(401).json({
                 success: false,
                 message: "Unauthorized",
@@ -38,7 +38,10 @@ const authMiddleware = async (req, res, next) => {
 
         next();
     } catch (error) {
-        next(error);
+        return res.status(401).json({
+            success: false,
+            message: "Unauthorized",
+        });
     }
 };
 

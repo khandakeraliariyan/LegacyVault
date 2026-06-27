@@ -1,6 +1,6 @@
 import { Eye, EyeOff, LockKeyhole } from "lucide-react";
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import AuthCard from "../../components/auth/AuthCard";
@@ -9,9 +9,12 @@ import { getFriendlyAuthErrorMessage } from "../../utils/firebaseErrors";
 
 export default function Login() {
     const navigate = useNavigate();
+    const location = useLocation();
     const {
         login,
         googleSignIn,
+        user,
+        loading: authLoading,
     } = useAuth();
     const [form, setForm] = useState({
         email: "",
@@ -19,6 +22,17 @@ export default function Login() {
     });
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+
+    useEffect(() => {
+        if (authLoading || !user) {
+            return;
+        }
+
+        const destination =
+            location.state?.from?.pathname || "/dashboard";
+
+        navigate(destination, { replace: true });
+    }, [authLoading, location.state, navigate, user]);
 
     const updateField = (event) => {
         setForm((current) => ({
@@ -37,7 +51,6 @@ export default function Login() {
                 form.password
             );
             toast.success("Welcome back to your vault.");
-            navigate("/dashboard");
         } catch (error) {
             toast.error(getFriendlyAuthErrorMessage(error, "Unable to sign in."));
         } finally {
@@ -51,7 +64,6 @@ export default function Login() {
         try {
             await googleSignIn();
             toast.success("Signed in with Google.");
-            navigate("/dashboard");
         } catch (error) {
             toast.error(getFriendlyAuthErrorMessage(error, "Google sign-in failed."));
         } finally {

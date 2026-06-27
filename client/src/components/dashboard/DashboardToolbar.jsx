@@ -1,6 +1,9 @@
 import { Search, SlidersHorizontal } from "lucide-react";
 
 export default function DashboardToolbar({
+    filterActive = false,
+    onFilterClick,
+    onSearchSubmit,
     searchValue,
     onSearchChange,
     searchPlaceholder = "Search...",
@@ -9,7 +12,13 @@ export default function DashboardToolbar({
 }) {
     return (
         <div className="mt-8 flex flex-col gap-4 border-b border-slate-200 pb-6">
-            <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+            <form
+                className="flex flex-col gap-3 xl:flex-row xl:items-center"
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    onSearchSubmit?.();
+                }}
+            >
                 <label className="relative min-w-0 flex-1">
                     <Search
                         size={16}
@@ -27,12 +36,16 @@ export default function DashboardToolbar({
                     {action ? action : null}
                     <button
                         type="button"
-                        className="inline-flex h-12 items-center justify-center rounded-[10px] border border-slate-300 bg-white px-4 text-slate-500 transition hover:border-slate-400 hover:text-slate-700"
+                        onClick={onFilterClick}
+                        className={`inline-flex h-12 items-center justify-center rounded-[10px] border px-4 transition ${filterActive
+                            ? "border-[#2f6b55] bg-[#eef9f4] text-[#2f6b55]"
+                            : "border-slate-300 bg-white text-slate-500 hover:border-slate-400 hover:text-slate-700"
+                            }`}
                     >
                         <SlidersHorizontal size={17} />
                     </button>
                 </div>
-            </div>
+            </form>
 
             {aside ? aside : null}
         </div>

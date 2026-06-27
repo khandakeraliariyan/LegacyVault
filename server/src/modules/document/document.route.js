@@ -12,6 +12,12 @@ router.post("/", authMiddleware, upload.single("file"), documentController.uploa
 
 router.get("/", authMiddleware, documentController.getMyDocuments);
 
+router.get("/:id/open", authMiddleware, documentController.openDocumentFile);
+
+router.get("/:id/download", authMiddleware, documentController.downloadDocumentFile);
+
+router.patch("/:id/status", authMiddleware, documentController.updateDocumentStatus);
+
 router.delete("/:id", authMiddleware, documentController.deleteDocument);
 
 module.exports = router;

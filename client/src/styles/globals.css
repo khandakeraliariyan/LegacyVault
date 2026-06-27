@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+:root {
+    --app-max-width: 1440px;
+    --public-content-width: calc(var(--app-max-width) * 11 / 12);
+}
+
 html {
     scroll-behavior: smooth;
 }
@@ -15,4 +20,18 @@ body {
         Inter,
         system-ui,
         sans-serif;
+}
+
+#root {
+    min-height: 100vh;
+}
+
+.app-shell {
+    width: min(100%, var(--app-max-width));
+    margin-inline: auto;
+}
+
+.public-shell {
+    width: min(91.666667%, var(--public-content-width));
+    margin-inline: auto;
 }

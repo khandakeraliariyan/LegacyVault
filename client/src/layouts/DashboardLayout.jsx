@@ -6,7 +6,7 @@ import Topbar from "../components/layout/Topbar";
 
 export default function DashboardLayout() {
     return (
-        <div className="flex min-h-screen bg-slate-50 text-slate-950">
+        <div className="app-shell flex min-h-screen bg-slate-50 text-slate-950">
             <Sidebar />
 
             <main className="flex min-w-0 flex-1 flex-col">

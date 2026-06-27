@@ -14,6 +14,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
+import BrandLogo from "../../components/common/BrandLogo";
 import { getApiErrorMessage } from "../../services/api";
 import {
     getVerificationQuestions,
@@ -106,7 +107,10 @@ export default function ClaimPortal() {
             <header className="border-b border-slate-200 bg-white px-6 py-5">
                 <div className="mx-auto flex max-w-4xl items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <Link to="/" className="text-xl font-bold text-emerald-800">LegacyVault</Link>
+                        <BrandLogo
+                            iconClassName="h-8 w-8"
+                            textClassName="text-xl text-emerald-800"
+                        />
                         <span className="text-sm text-slate-500">Claims Portal</span>
                     </div>
                     <span className="inline-flex items-center gap-2 text-xs font-bold uppercase text-emerald-700">

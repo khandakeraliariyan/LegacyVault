@@ -14,6 +14,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
+import BrandLogo from "../../components/common/BrandLogo";
 import Loading from "../../components/common/Loading";
 import { getApiErrorMessage } from "../../services/api";
 import { getReleasedVault, getSuccessorAccess } from "../../services/successor.service";
@@ -57,7 +58,10 @@ export default function VaultAccess() {
     return (
         <div className="min-h-screen bg-slate-50 text-slate-950">
             <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
-                <Link to="/" className="text-lg font-bold text-emerald-700">LegacyVault</Link>
+                <BrandLogo
+                    iconClassName="h-8 w-8"
+                    textClassName="text-lg text-emerald-700"
+                />
                 <form onSubmit={handleSearch} className="relative hidden w-full max-w-md md:block">
                     <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input

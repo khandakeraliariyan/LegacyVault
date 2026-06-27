@@ -1,5 +1,6 @@
-import { LockKeyhole, ShieldCheck } from "lucide-react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
+
+import BrandLogo from "../components/common/BrandLogo";
 
 const publicNav = [
     {
@@ -18,13 +19,13 @@ const publicNav = [
 
 export default function MainLayout() {
     return (
-        <div className="min-h-screen bg-[#f7f9fb] text-slate-950">
+        <div className="app-shell min-h-screen bg-[#f7f9fb] text-slate-950">
             <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/92 backdrop-blur">
-                <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 lg:px-8">
-                    <Link to="/" className="flex items-center gap-2 text-slate-900">
-                        <LockKeyhole size={19} className="text-[#0f5139]" />
-                        <span className="text-xl font-bold tracking-[-0.02em]">LegacyVault</span>
-                    </Link>
+                <div className="public-shell flex h-16 items-center justify-between">
+                    <BrandLogo
+                        iconClassName="h-9 w-9"
+                        textClassName="text-xl"
+                    />
 
                     <nav className="hidden items-center gap-8 md:flex">
                         {publicNav.map((item) => (
@@ -58,12 +59,12 @@ export default function MainLayout() {
             <Outlet />
 
             <footer className="border-t border-slate-200 bg-white">
-                <div className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-10 md:flex-row md:items-center md:justify-between lg:px-8">
+                <div className="public-shell flex flex-col gap-6 py-10 md:flex-row md:items-center md:justify-between">
                     <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-slate-900">
-                            <ShieldCheck size={18} className="text-[#235842]" />
-                            <span className="font-bold">LegacyVault</span>
-                        </div>
+                        <BrandLogo
+                            iconClassName="h-7 w-7"
+                            textClassName="text-base"
+                        />
                         <p className="text-sm text-slate-500">
                             Secure digital inheritance for documents, wishes, and family continuity.
                         </p>

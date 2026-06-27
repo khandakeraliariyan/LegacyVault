@@ -2,6 +2,9 @@ import api from "./api";
 import {
     firebaseGoogleLogin,
     firebaseLogout,
+    firebaseConfirmPasswordReset,
+    firebaseRequestPasswordReset,
+    firebaseVerifyPasswordResetCode,
 } from "./firebase.service";
 import { saveToken } from "../utils/storage";
 
@@ -40,6 +43,24 @@ export const logoutUser = async () => {
     } catch {
         // Ignore if Firebase client session was never created.
     }
+};
+
+export const requestPasswordReset = async (email) => {
+    return firebaseRequestPasswordReset(email);
+};
+
+export const verifyResetCode = async (code) => {
+    return firebaseVerifyPasswordResetCode(code);
+};
+
+export const confirmResetPassword = async (
+    code,
+    newPassword
+) => {
+    return firebaseConfirmPasswordReset(
+        code,
+        newPassword
+    );
 };
 
 export const backendLogin = async (firebaseToken) => {

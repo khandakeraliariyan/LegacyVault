@@ -16,9 +16,11 @@ import {
     AdminSuccessors,
     AdminSystemHealth,
 } from "../pages/admin/AdminPages";
+import ForgotPassword from "../pages/auth/ForgotPassword";
 import ClaimsManagement from "../pages/admin/ClaimsManagement";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
+import ResetPassword from "../pages/auth/ResetPassword";
 import ClaimPortal from "../pages/claim/ClaimPortal";
 import Claims from "../pages/dashboard/Claims";
 import Dashboard from "../pages/dashboard/Dashboard";
@@ -47,6 +49,14 @@ export const router =
                 {
                     path: "/register",
                     element: <Register />,
+                },
+                {
+                    path: "/forgot-password",
+                    element: <ForgotPassword />,
+                },
+                {
+                    path: "/reset-password",
+                    element: <ResetPassword />,
                 },
             ],
         },

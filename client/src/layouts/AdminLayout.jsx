@@ -10,14 +10,18 @@ import {
 } from "lucide-react";
 
 import DashboardFooter from "../components/layout/DashboardFooter";
+import BrandLogo from "../components/common/BrandLogo";
 import { adminSidebar } from "../constants/adminSidebar";
 
 export default function AdminLayout() {
     return (
-        <div className="flex min-h-screen bg-slate-50 text-slate-950">
+        <div className="app-shell flex min-h-screen bg-slate-50 text-slate-950">
             <aside className="hidden w-64 shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col">
                 <div className="px-5 py-5">
-                    <h1 className="text-lg font-bold text-emerald-700">LegacyVault</h1>
+                    <BrandLogo
+                        iconClassName="h-8 w-8"
+                        textClassName="text-lg text-emerald-700"
+                    />
                     <p className="mt-1 text-xs font-medium text-slate-600">Admin Console</p>
                 </div>
 

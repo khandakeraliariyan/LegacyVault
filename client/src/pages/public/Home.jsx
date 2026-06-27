@@ -84,7 +84,7 @@ export default function Home() {
 function Hero() {
     return (
         <section className="border-b border-slate-200 bg-[linear-gradient(180deg,#fbfcfd_0%,#f7f9fb_100%)]">
-            <div className="mx-auto grid max-w-7xl items-center gap-14 px-5 py-18 md:grid-cols-[1fr_0.98fr] lg:px-8 lg:py-24">
+            <div className="public-shell grid items-center gap-14 py-18 md:grid-cols-[1fr_0.98fr] lg:py-24">
                 <div className="max-w-xl">
                     <div className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500 shadow-sm">
                         <ShieldCheck size={14} className="text-[#235842]" />
@@ -141,7 +141,7 @@ function Hero() {
 function TrustStrip() {
     return (
         <section className="border-b border-slate-200 bg-white">
-            <div className="mx-auto flex max-w-7xl flex-col gap-5 px-5 py-12 text-center lg:px-8">
+            <div className="public-shell flex flex-col gap-5 py-12 text-center">
                 <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">
                     Trusted by planners, families, and succession advisors
                 </p>
@@ -160,7 +160,7 @@ function TrustStrip() {
 function BentoSecurity() {
     return (
         <section id="features" className="border-b border-slate-200 bg-[#f1f4f6] py-22">
-            <div className="mx-auto max-w-7xl px-5 lg:px-8">
+            <div className="public-shell">
                 <div className="mx-auto mb-12 max-w-3xl text-center">
                     <h2 className="text-3xl font-bold tracking-[-0.03em] text-slate-950">Engineered for permanence</h2>
                     <p className="mt-4 text-base leading-7 text-slate-600">
@@ -250,7 +250,7 @@ function BentoSecurity() {
 function Workflow() {
     return (
         <section className="border-b border-slate-200 bg-white py-22">
-            <div className="mx-auto grid max-w-7xl gap-12 px-5 md:grid-cols-[1fr_0.9fr] lg:px-8">
+            <div className="public-shell grid gap-12 md:grid-cols-[1fr_0.9fr]">
                 <div>
                     <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#235842]">How it works</p>
                     <h2 className="mt-4 text-3xl font-bold tracking-[-0.03em] text-slate-950">
@@ -294,7 +294,7 @@ function Workflow() {
 function FeatureGrid() {
     return (
         <section id="security" className="border-b border-slate-200 bg-[#fbfcfd] py-22">
-            <div className="mx-auto max-w-7xl px-5 lg:px-8">
+            <div className="public-shell">
                 <div className="mb-12 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                     <div className="max-w-2xl">
                         <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#235842]">Product scope</p>
@@ -331,7 +331,7 @@ function FeatureGrid() {
 function FaqSection() {
     return (
         <section id="pricing" className="border-b border-slate-200 bg-white py-22">
-            <div className="mx-auto max-w-4xl px-5 lg:px-8">
+            <div className="public-shell max-w-4xl">
                 <div className="text-center">
                     <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#235842]">Frequently asked</p>
                     <h2 className="mt-4 text-3xl font-bold tracking-[-0.03em] text-slate-950">Answers for families planning ahead</h2>
@@ -359,7 +359,7 @@ function FaqSection() {
 function BottomCta() {
     return (
         <section className="bg-[#f1f4f6] py-18">
-            <div className="mx-auto max-w-7xl px-5 lg:px-8">
+            <div className="public-shell">
                 <div className="rounded-3xl bg-[#235842] px-8 py-16 text-center text-white shadow-[0_30px_60px_rgba(35,88,66,0.22)]">
                     <p className="text-sm font-bold uppercase tracking-[0.18em] text-emerald-100">Ready to begin</p>
                     <h2 className="mx-auto mt-4 max-w-3xl text-4xl font-extrabold tracking-[-0.04em]">

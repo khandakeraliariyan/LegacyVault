@@ -52,8 +52,29 @@ const deleteMessage = async (req, res, next) => {
     }
 };
 
+const updateMessage = async (req, res, next) => {
+    try {
+        const result =
+            await futureMessageService.updateMessage(
+                req.user._id,
+                req.params.id,
+                req.body
+            );
+
+        res.status(200).json({
+            success: true,
+            message:
+                "Message updated",
+            data: result,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     createFutureMessage,
     getMyMessages,
     deleteMessage,
+    updateMessage,
 };

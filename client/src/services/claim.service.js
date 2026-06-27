@@ -1,5 +1,10 @@
 import api from "./api";
 
+export const getMyClaims = async () => {
+    const response = await api.get("/claims/mine");
+    return response.data.data;
+};
+
 export const getVerificationQuestions = async (email) => {
     const response = await api.get("/claims/verification-questions", {
         params: { email },

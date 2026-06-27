@@ -1,16 +1,15 @@
 import {
     CheckCircle2,
     Circle,
-    Plus,
     ShieldCheck,
     UserPlus,
 } from "lucide-react";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import { Link } from "react-router-dom";
 
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
-import DashboardToolbar from "../../components/dashboard/DashboardToolbar";
 import Loading from "../../components/common/Loading";
 import { getApiErrorMessage } from "../../services/api";
 import {
@@ -24,12 +23,20 @@ const emptyForm = {
     fullName: "",
     email: "",
     phone: "",
+    nidNumber: "",
     relationship: "",
 };
 
+const relationshipOptions = [
+    "Spouse / Partner",
+    "Child",
+    "Sibling",
+    "Legal Trustee",
+    "Other",
+];
+
 export default function Successors() {
     const queryClient = useQueryClient();
-    const [search, setSearch] = useState("");
     const [showForm, setShowForm] = useState(false);
     const [form, setForm] = useState(emptyForm);
 
@@ -64,6 +71,7 @@ export default function Successors() {
                 fullName: successor.fullName || "",
                 email: successor.email || "",
                 phone: successor.phone || "",
+                nidNumber: successor.nidNumber || "",
                 relationship: successor.relationship || "",
             });
         } else {
@@ -73,11 +81,30 @@ export default function Successors() {
         setShowForm(true);
     };
 
+    const handleSave = () => {
+        const requiredFields = [
+            ["fullName", "Full name"],
+            ["relationship", "Relationship"],
+            ["email", "Contact email"],
+            ["phone", "Secure phone"],
+            ["nidNumber", "NID number"],
+        ];
+
+        const missingField = requiredFields.find(
+            ([key]) => !String(form[key] || "").trim()
+        );
+
+        if (missingField) {
+            toast.error(`${missingField[1]} is required.`);
+            return;
+        }
+
+        saveMutation.mutate(form);
+    };
+
     if (isLoading) {
         return <Loading />;
     }
-
-    const showSuccessor = successor && matchesSearch(successor, search);
 
     return (
         <div className="mx-auto max-w-[1120px]">
@@ -89,19 +116,7 @@ export default function Successors() {
                         onClick={openForm}
                         className="inline-flex h-11 items-center gap-2 rounded-[8px] bg-[#2f6b55] px-4 text-sm font-semibold text-white transition hover:bg-[#255743]"
                     >
-                        <Plus size={15} />
-                        {successor ? "Edit Successor" : "Add Successor"}
-                    </button>
-                }
-            />
-
-            <DashboardToolbar
-                searchValue={search}
-                onSearchChange={setSearch}
-                searchPlaceholder="Search records..."
-                action={
-                    <button className="inline-flex h-10 items-center rounded-[8px] bg-[#2f6b55] px-4 text-xs font-semibold text-white transition hover:bg-[#255743]">
-                        Search
+                        {successor ? "Edit Successor" : "Set Primary Successor"}
                     </button>
                 }
             />
@@ -112,25 +127,76 @@ export default function Successors() {
                         {successor ? "Edit Primary Successor" : "Add Primary Successor"}
                     </h2>
                     <div className="mt-5 grid gap-4 md:grid-cols-2">
-                        {[
-                            ["fullName", "Full Name"],
-                            ["relationship", "Relationship"],
-                            ["email", "Contact Email"],
-                            ["phone", "Secure Phone"],
-                        ].map(([key, label]) => (
-                            <label key={key} className="block">
-                                <span className="text-sm font-medium text-slate-600">{label}</span>
-                                <input
-                                    value={form[key]}
-                                    onChange={(event) => setForm({ ...form, [key]: event.target.value })}
-                                    className="mt-2 h-12 w-full rounded-[10px] border border-slate-300 px-4 text-sm text-slate-900 outline-none transition focus:border-[#2f6b55]"
-                                />
-                            </label>
-                        ))}
+                        <label className="block">
+                            <span className="text-sm font-medium text-slate-600">
+                                Full Name <span className="text-rose-500">*</span>
+                            </span>
+                            <input
+                                value={form.fullName}
+                                onChange={(event) => setForm({ ...form, fullName: event.target.value })}
+                                required
+                                className="mt-2 h-12 w-full rounded-[10px] border border-slate-300 px-4 text-sm text-slate-900 outline-none transition focus:border-[#2f6b55]"
+                            />
+                        </label>
+
+                        <label className="block">
+                            <span className="text-sm font-medium text-slate-600">
+                                Relationship <span className="text-rose-500">*</span>
+                            </span>
+                            <select
+                                value={form.relationship}
+                                onChange={(event) => setForm({ ...form, relationship: event.target.value })}
+                                required
+                                className="mt-2 h-12 w-full rounded-[10px] border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-[#2f6b55]"
+                            >
+                                <option value="">Select relationship...</option>
+                                {relationshipOptions.map((option) => (
+                                    <option key={option} value={option}>
+                                        {option}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+
+                        <label className="block">
+                            <span className="text-sm font-medium text-slate-600">
+                                Contact Email <span className="text-rose-500">*</span>
+                            </span>
+                            <input
+                                value={form.email}
+                                onChange={(event) => setForm({ ...form, email: event.target.value })}
+                                required
+                                className="mt-2 h-12 w-full rounded-[10px] border border-slate-300 px-4 text-sm text-slate-900 outline-none transition focus:border-[#2f6b55]"
+                            />
+                        </label>
+
+                        <label className="block">
+                            <span className="text-sm font-medium text-slate-600">
+                                Secure Phone <span className="text-rose-500">*</span>
+                            </span>
+                            <input
+                                value={form.phone}
+                                onChange={(event) => setForm({ ...form, phone: event.target.value })}
+                                required
+                                className="mt-2 h-12 w-full rounded-[10px] border border-slate-300 px-4 text-sm text-slate-900 outline-none transition focus:border-[#2f6b55]"
+                            />
+                        </label>
+
+                        <label className="block">
+                            <span className="text-sm font-medium text-slate-600">
+                                NID Number <span className="text-rose-500">*</span>
+                            </span>
+                            <input
+                                value={form.nidNumber}
+                                onChange={(event) => setForm({ ...form, nidNumber: event.target.value })}
+                                required
+                                className="mt-2 h-12 w-full rounded-[10px] border border-slate-300 px-4 text-sm text-slate-900 outline-none transition focus:border-[#2f6b55]"
+                            />
+                        </label>
                     </div>
                     <div className="mt-5 flex gap-3">
                         <button
-                            onClick={() => saveMutation.mutate(form)}
+                            onClick={handleSave}
                             disabled={saveMutation.isPending}
                             className="inline-flex h-11 items-center rounded-[8px] bg-[#2f6b55] px-5 text-sm font-semibold text-white disabled:opacity-60"
                         >
@@ -148,7 +214,19 @@ export default function Successors() {
 
             <div className="mt-6 grid gap-5 xl:grid-cols-[1fr_340px]">
                 <section className="overflow-hidden rounded-[14px] border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                    {showSuccessor ? (
+                    {showForm && !successor ? (
+                        <div className="flex min-h-[360px] flex-col items-center justify-center px-8 text-center">
+                            <span className="grid size-14 place-items-center rounded-full bg-[#eef9f4] text-[#2f6b55]">
+                                <UserPlus size={26} />
+                            </span>
+                            <h2 className="mt-5 text-2xl font-semibold text-slate-900">
+                                Complete the primary successor form
+                            </h2>
+                            <p className="mt-3 max-w-md text-sm leading-6 text-slate-500">
+                                All required details must be provided before the primary successor can be saved.
+                            </p>
+                        </div>
+                    ) : successor ? (
                         <>
                             <div className="p-6">
                                 <div className="flex items-start justify-between gap-4">
@@ -157,9 +235,14 @@ export default function Successors() {
                                             {successor.fullName?.slice(0, 1)?.toUpperCase() || "S"}
                                         </div>
                                         <div>
-                                            <h2 className="text-[2rem] font-semibold tracking-[-0.05em] text-slate-900">
-                                                {successor.fullName}
-                                            </h2>
+                                            <div className="flex flex-wrap items-center gap-3">
+                                                <h2 className="text-[2rem] font-semibold tracking-[-0.05em] text-slate-900">
+                                                    {successor.fullName}
+                                                </h2>
+                                                <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+                                                    View Only
+                                                </span>
+                                            </div>
                                             <p className="mt-1 text-sm text-slate-500">
                                                 Legal Beneficiary &amp; Primary Executor
                                             </p>
@@ -174,13 +257,16 @@ export default function Successors() {
                                     </span>
                                 </div>
 
-                                <div className="mt-8 divide-y divide-slate-200 border-t border-slate-200">
-                                    <DetailRow label="Relationship" value={successor.relationship || "Not set"} />
-                                    <DetailRow label="Contact Email" value={successor.email || "Not set"} />
-                                    <DetailRow label="Secure Phone" value={successor.phone || "Not set"} />
-                                    <DetailRow label="Authorization Level" value="Full Access" />
-                                </div>
+                            <div className="mt-8 divide-y divide-slate-200 border-t border-slate-200">
+                                <DetailRow label="Relationship" value={successor.relationship || "Not set"} />
+                                <DetailRow label="Contact Email" value={successor.email || "Not set"} />
+                                <DetailRow label="Secure Phone" value={successor.phone || "Not set"} />
+                                <DetailRow label="NID Number" value={successor.nidNumber || "Not set"} />
+                                <DetailRow label="Authorization Level" value="Full Access" />
+                                <DetailRow label="Access Mode" value="View-only after successful claim" />
+                                <DetailRow label="Vault Access" value={successor.vaultAccessGranted ? "Granted after automatic verification" : "Waiting for matching claim"} />
                             </div>
+                        </div>
 
                             <div className="flex items-center justify-end gap-3 border-t border-slate-200 bg-[#f8f9fb] px-6 py-4">
                                 <button
@@ -190,11 +276,11 @@ export default function Successors() {
                                 >
                                     Revoke Access
                                 </button>
-                                <button
-                                    onClick={openForm}
-                                    className="inline-flex h-10 items-center rounded-[8px] border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                                >
-                                    Edit Profile
+                            <button
+                                onClick={openForm}
+                                className="inline-flex h-10 items-center rounded-[8px] border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                            >
+                                Edit Profile
                                 </button>
                             </div>
                         </>
@@ -207,13 +293,12 @@ export default function Successors() {
                                 No primary successor configured
                             </h2>
                             <p className="mt-3 max-w-md text-sm leading-6 text-slate-500">
-                                Add the trusted individual who should receive access when claim verification is approved.
+                                Add the trusted individual who should receive access when the claim matches their email, relationship, NID number, and security answers.
                             </p>
                             <button
                                 onClick={openForm}
-                                className="mt-6 inline-flex h-11 items-center gap-2 rounded-[8px] bg-[#2f6b55] px-5 text-sm font-semibold text-white"
+                                className="mt-6 inline-flex h-11 items-center rounded-[8px] bg-[#2f6b55] px-5 text-sm font-semibold text-white"
                             >
-                                <Plus size={15} />
                                 Add Primary Successor
                             </button>
                         </div>
@@ -228,25 +313,25 @@ export default function Successors() {
                             <div
                                 className="grid size-[116px] place-items-center rounded-full"
                                 style={{
-                                    background: "conic-gradient(#356f5a 90%, #e5eaec 90% 100%)",
+                                    background: `conic-gradient(#356f5a ${getSecurityScore(successor)}%, #e5eaec ${getSecurityScore(successor)}% 100%)`,
                                 }}
                             >
                                 <div className="grid size-[88px] place-items-center rounded-full bg-white text-center">
                                     <div>
-                                        <p className="text-[2rem] font-semibold tracking-[-0.04em] text-[#2f6b55]">90%</p>
+                                        <p className="text-[2rem] font-semibold tracking-[-0.04em] text-[#2f6b55]">{getSecurityScore(successor)}%</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <p className="mt-4 text-center text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                            Excellent Standing
+                            {getSecurityHeading(successor)}
                         </p>
 
                         <div className="mt-5 space-y-3">
-                            <ChecklistItem checked text="Two-factor authentication active" />
-                            <ChecklistItem checked={Boolean(successor?.isVerified)} text="Identity documents verified" />
-                            <ChecklistItem checked={false} text="Biometric setup pending" />
+                            <ChecklistItem checked={Boolean(successor)} text="Primary successor configured" />
+                            <ChecklistItem checked={Boolean(successor)} text="Required successor details completed" />
+                            <ChecklistItem checked={Boolean(successor)} text="Single-successor setup complete" />
                         </div>
                     </section>
 
@@ -256,12 +341,14 @@ export default function Successors() {
                             <h2 className="text-[1.05rem] font-semibold">Contingency</h2>
                         </div>
                         <p className="mt-3 text-sm leading-6 text-slate-500">
-                            No secondary successor appointed. It is highly recommended to establish a backup.
+                            This release supports only one primary successor. To change the successor later, edit the current profile or remove it first.
                         </p>
-                        <button className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[8px] bg-[#2f6b55] px-4 text-sm font-semibold text-white">
-                            <Plus size={15} />
-                            Appoint Secondary
-                        </button>
+                        <Link
+                            to="/dashboard/claims"
+                            className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[8px] bg-[#2f6b55] px-4 text-sm font-semibold text-white"
+                        >
+                            Review Claims
+                        </Link>
                     </section>
                 </aside>
             </div>
@@ -289,14 +376,10 @@ function ChecklistItem({ checked, text }) {
     );
 }
 
-function matchesSearch(successor, search) {
-    const query = search.trim().toLowerCase();
+function getSecurityScore(successor) {
+    return successor ? 100 : 0;
+}
 
-    if (!query) {
-        return true;
-    }
-
-    return `${successor.fullName} ${successor.email} ${successor.relationship} ${successor.phone}`
-        .toLowerCase()
-        .includes(query);
+function getSecurityHeading(successor) {
+    return successor ? "Setup Complete" : "Needs Attention";
 }

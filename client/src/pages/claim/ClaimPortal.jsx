@@ -3,12 +3,10 @@ import {
     Check,
     CheckCircle2,
     ChevronRight,
-    FileText,
     Globe,
     HelpCircle,
     Lock,
     Shield,
-    Upload,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -25,7 +23,6 @@ import { ROUTES } from "../../constants/routes";
 const steps = [
     { label: "Verify Identity", icon: Shield },
     { label: "Security Questions", icon: HelpCircle },
-    { label: "Supporting Docs", icon: FileText },
     { label: "Review & Submit", icon: CheckCircle2 },
 ];
 
@@ -35,13 +32,13 @@ export default function ClaimPortal() {
     const [loading, setLoading] = useState(false);
     const [questions, setQuestions] = useState([]);
     const [answers, setAnswers] = useState({});
-    const [identityDocumentUrl, setIdentityDocumentUrl] = useState("");
     const [submittedClaim, setSubmittedClaim] = useState(null);
     const [form, setForm] = useState({
         claimantName: "",
         claimantEmail: "",
         claimantPhone: "",
         relationship: "",
+        claimantNidNumber: "",
         agreed: false,
     });
 
@@ -63,7 +60,7 @@ export default function ClaimPortal() {
     };
 
     const handleIdentityContinue = async () => {
-        if (!form.claimantName || !form.claimantEmail || !form.claimantPhone || !form.relationship || !form.agreed) {
+        if (!form.claimantName || !form.claimantEmail || !form.claimantPhone || !form.relationship || !form.claimantNidNumber || !form.agreed) {
             toast.error("Please complete all required fields");
             return;
         }
@@ -79,7 +76,8 @@ export default function ClaimPortal() {
                 claimantName: form.claimantName,
                 claimantEmail: form.claimantEmail,
                 claimantPhone: form.claimantPhone,
-                identityDocumentUrl: identityDocumentUrl || "https://legacyvault.local/identity-pending",
+                claimantRelationship: form.relationship,
+                claimantNidNumber: form.claimantNidNumber,
                 answers: questions.map((question) => ({
                     questionId: question._id,
                     answer: answers[question._id] || "",
@@ -89,8 +87,8 @@ export default function ClaimPortal() {
             setSubmittedClaim(claim);
             toast.success(`Claim submitted with status: ${claim.status}`);
 
-            if (claim.status === "APPROVED" || claim.status === "UNDER_REVIEW") {
-                navigate(`${ROUTES.VAULT_ACCESS}?email=${encodeURIComponent(form.claimantEmail)}`);
+            if (claim.status === "APPROVED") {
+                navigate(`${ROUTES.VAULT_ACCESS}?claimId=${encodeURIComponent(claim._id)}`);
             }
         } catch (error) {
             toast.error(getApiErrorMessage(error, "Claim submission failed"));
@@ -121,24 +119,24 @@ export default function ClaimPortal() {
             </header>
 
             <div className="mx-auto max-w-4xl px-6 py-10">
-                <nav className="mb-10 flex items-center justify-between">
+                <nav className="mx-auto mb-10 flex w-full max-w-3xl items-start justify-center">
                     {steps.map((step, index) => {
                         const Icon = step.icon;
                         const active = index === currentStep;
                         const done = index < currentStep;
 
                         return (
-                            <div key={step.label} className="flex flex-1 items-center">
-                                <div className="flex flex-col items-center">
+                            <div key={step.label} className="flex min-w-0 flex-1 items-center">
+                                <div className="flex w-full flex-col items-center text-center">
                                     <span className={`grid size-10 place-items-center rounded-full ${active || done ? "bg-emerald-700 text-white" : "bg-slate-200 text-slate-500"}`}>
                                         {done ? <Check size={18} /> : <Icon size={18} />}
                                     </span>
-                                    <p className={`mt-2 hidden text-xs font-bold sm:block ${active ? "text-emerald-700 underline" : "text-slate-500"}`}>
+                                    <p className={`mt-3 hidden text-xs font-bold sm:block ${active ? "text-emerald-700 underline" : "text-slate-500"}`}>
                                         {step.label}
                                     </p>
                                 </div>
                                 {index < steps.length - 1 ? (
-                                    <div className={`mx-2 h-px flex-1 ${index < currentStep ? "bg-emerald-700" : "bg-slate-200"}`} />
+                                    <div className={`mx-6 mb-7 h-px flex-1 ${index < currentStep ? "bg-emerald-700" : "bg-slate-200"}`} />
                                 ) : null}
                             </div>
                         );
@@ -159,19 +157,10 @@ export default function ClaimPortal() {
                         />
                     ) : null}
                     {currentStep === 2 ? (
-                        <StepDocuments
-                            identityDocumentUrl={identityDocumentUrl}
-                            setIdentityDocumentUrl={setIdentityDocumentUrl}
-                            onContinue={next}
-                            onBack={back}
-                        />
-                    ) : null}
-                    {currentStep === 3 ? (
                         <StepReview
                             form={form}
                             questions={questions}
                             answers={answers}
-                            identityDocumentUrl={identityDocumentUrl}
                             submittedClaim={submittedClaim}
                             onBack={back}
                             onSubmit={handleSubmit}
@@ -182,7 +171,7 @@ export default function ClaimPortal() {
 
                 <div className="mt-6 flex items-center justify-between text-sm text-slate-500">
                     <Link to="/dashboard/claims" className="inline-flex items-center gap-1 hover:text-emerald-700">
-                        Need help with your claim? View FAQ
+                        Need help with your claim? View claim status
                         <ChevronRight size={14} />
                     </Link>
                     <span>Reference ID: LV-{Date.now().toString().slice(-6)}</span>
@@ -217,6 +206,13 @@ function StepIdentity({ form, loading, onContinue, update }) {
                             ))}
                         </select>
                     </div>
+                    <Field
+                        label="NID Number"
+                        value={form.claimantNidNumber}
+                        onChange={(value) => update("claimantNidNumber", value)}
+                        placeholder="Enter your NID number"
+                        helper="Must match the NID number stored by the vault owner for this successor."
+                    />
                     <label className="flex cursor-pointer gap-3 text-sm leading-6 text-slate-600">
                         <input type="checkbox" checked={form.agreed} onChange={(event) => update("agreed", event.target.checked)} className="mt-1 size-4 accent-emerald-700" />
                         I confirm that I am initiating this claim in good faith and understand that providing false information is a legal violation under the LegacyVault Terms of Service.
@@ -266,39 +262,7 @@ function StepQuestions({ answers, onBack, onContinue, questions, setAnswers }) {
     );
 }
 
-function StepDocuments({ identityDocumentUrl, onBack, onContinue, setIdentityDocumentUrl }) {
-    return (
-        <>
-            <div className="border-b border-slate-100 p-8">
-                <h1 className="text-2xl font-bold">Step 3: Supporting Documents</h1>
-                <p className="mt-2 text-sm text-slate-600">Provide a URL to your identity document or upload reference.</p>
-            </div>
-            <div className="p-8">
-                <div className="grid min-h-48 place-items-center rounded-2xl border-2 border-dashed border-slate-200 bg-blue-50/30">
-                    <div className="w-full max-w-lg px-6 text-center">
-                        <Upload size={36} className="mx-auto text-emerald-700" />
-                        <p className="mt-4 font-bold">Identity Document URL</p>
-                        <input
-                            value={identityDocumentUrl}
-                            onChange={(event) => setIdentityDocumentUrl(event.target.value)}
-                            placeholder="https://example.com/identity-document.pdf"
-                            className="mt-4 h-12 w-full rounded-xl border border-slate-200 px-4 text-sm"
-                        />
-                    </div>
-                </div>
-                <div className="mt-6 flex gap-4">
-                    <button onClick={onContinue} className="inline-flex h-12 items-center gap-2 rounded-xl bg-emerald-700 px-8 font-bold text-white">
-                        Save and Continue
-                        <ArrowRight size={16} />
-                    </button>
-                    <button onClick={onBack} className="text-sm text-slate-500">Back</button>
-                </div>
-            </div>
-        </>
-    );
-}
-
-function StepReview({ answers, form, identityDocumentUrl, loading, onBack, onSubmit, questions, submittedClaim }) {
+function StepReview({ answers, form, loading, onBack, onSubmit, questions, submittedClaim }) {
     return (
         <>
             <div className="border-b border-slate-100 p-8">
@@ -310,8 +274,8 @@ function StepReview({ answers, form, identityDocumentUrl, loading, onBack, onSub
                 <ReviewRow label="Email" value={form.claimantEmail} />
                 <ReviewRow label="Phone" value={form.claimantPhone} />
                 <ReviewRow label="Relationship" value={form.relationship} />
+                <ReviewRow label="NID Number" value={form.claimantNidNumber} />
                 <ReviewRow label="Security Answers" value={`${Object.values(answers).filter(Boolean).length} of ${questions.length} answered`} />
-                <ReviewRow label="Identity Document" value={identityDocumentUrl || "Pending upload reference"} />
                 {submittedClaim ? (
                     <ReviewRow label="Claim Status" value={`${submittedClaim.status} (Score: ${submittedClaim.score}%)`} />
                 ) : null}
@@ -360,10 +324,10 @@ function SecuritySidebar() {
                 Security Protocol
             </p>
             <p className="mt-4 text-sm leading-6 text-slate-600">
-                Your IP address is logged and this process ensures secure asset release only to verified successors.
+                Your details are compared against the owner-assigned successor profile and security-question answers for automatic release.
             </p>
             <ul className="mt-6 space-y-3 text-sm text-slate-700">
-                {["End-to-end encryption active", "Zero-knowledge proof verification", "Compliance with GDPR & CCPA"].map((item) => (
+                {["End-to-end encryption active", "NID and relationship matching", "Security question score validation"].map((item) => (
                     <li key={item} className="flex items-center gap-2">
                         <Check size={14} className="text-emerald-700" />
                         {item}

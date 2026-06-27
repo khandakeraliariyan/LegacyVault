@@ -20,16 +20,16 @@ export const deleteSuccessor = async () => {
     return response.data;
 };
 
-export const getSuccessorAccess = async (email) => {
+export const getSuccessorAccess = async (email, nidNumber) => {
     const response = await api.get("/successors/access", {
-        params: { email },
+        params: { email, nidNumber },
     });
     return response.data.data;
 };
 
-export const getReleasedVault = async (email) => {
+export const getReleasedVault = async (claimId) => {
     const response = await api.get("/successors/vault", {
-        params: { email },
+        params: { claimId },
     });
     return response.data.data;
 };

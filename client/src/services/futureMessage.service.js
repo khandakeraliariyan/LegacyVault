@@ -10,6 +10,11 @@ export const createFutureMessage = async (payload) => {
     return response.data.data;
 };
 
+export const updateFutureMessage = async (id, payload) => {
+    const response = await api.patch(`/future-messages/${id}`, payload);
+    return response.data.data;
+};
+
 export const deleteFutureMessage = async (id) => {
     const response = await api.delete(`/future-messages/${id}`);
     return response.data;

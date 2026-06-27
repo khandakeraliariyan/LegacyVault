@@ -3,8 +3,8 @@ import {
     EyeOff,
     UserRoundPlus,
 } from "lucide-react";
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import AuthCard from "../../components/auth/AuthCard";
@@ -13,9 +13,12 @@ import { getFriendlyAuthErrorMessage } from "../../utils/firebaseErrors";
 
 export default function Register() {
     const navigate = useNavigate();
+    const location = useLocation();
     const {
         register,
         googleSignIn,
+        user,
+        loading: authLoading,
     } = useAuth();
 
     const [form, setForm] = useState({
@@ -27,6 +30,17 @@ export default function Register() {
     });
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+
+    useEffect(() => {
+        if (authLoading || !user) {
+            return;
+        }
+
+        const destination =
+            location.state?.from?.pathname || "/dashboard";
+
+        navigate(destination, { replace: true });
+    }, [authLoading, location.state, navigate, user]);
 
     const updateField = (event) => {
         const {
@@ -59,7 +73,6 @@ export default function Register() {
                 form.password
             );
             toast.success("Your secure vault is ready.");
-            navigate("/dashboard");
         } catch (error) {
             toast.error(getFriendlyAuthErrorMessage(error, "Unable to create your vault."));
         } finally {
@@ -73,7 +86,6 @@ export default function Register() {
         try {
             await googleSignIn();
             toast.success("Your Google vault is ready.");
-            navigate("/dashboard");
         } catch (error) {
             toast.error(getFriendlyAuthErrorMessage(error, "Google sign-up failed."));
         } finally {

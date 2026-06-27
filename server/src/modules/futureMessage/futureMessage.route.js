@@ -10,6 +10,8 @@ router.post("/", authMiddleware, futureMessageController.createFutureMessage);
 
 router.get("/", authMiddleware, futureMessageController.getMyMessages);
 
+router.patch("/:id", authMiddleware, futureMessageController.updateMessage);
+
 router.delete("/:id", authMiddleware, futureMessageController.deleteMessage);
 
 module.exports = router;

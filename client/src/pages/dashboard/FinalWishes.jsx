@@ -1,12 +1,12 @@
 import {
-    ArrowRight,
-    CalendarClock,
-    FileText,
     Heart,
     PawPrint,
     Plus,
     ScrollText,
+    SquarePen,
     Trash2,
+    BriefcaseBusiness,
+    FileText,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -24,31 +24,12 @@ import {
 } from "../../services/finalWish.service";
 import { formatDate } from "../../utils/format";
 
-const wishGroups = [
-    {
-        key: "PERSONAL",
-        title: "Ceremony Details",
-        description: "Preferences for memorial services, locations, and attendee lists.",
-        icon: ScrollText,
-    },
-    {
-        key: "FAMILY",
-        title: "Charitable Gifts",
-        description: "Directives for donations to specific organizations or causes.",
-        icon: Heart,
-    },
-    {
-        key: "OTHER",
-        title: "Pet Care",
-        description: "Instructions for the care, rehoming, and financial support for pets.",
-        icon: PawPrint,
-    },
-    {
-        key: "ASSET",
-        title: "Organ Donation",
-        description: "Specific medical directives regarding organ or tissue donation.",
-        icon: FileText,
-    },
+const categoryOptions = [
+    { value: "PERSONAL", label: "Personal", icon: ScrollText },
+    { value: "FAMILY", label: "Family", icon: Heart },
+    { value: "ASSET", label: "Asset", icon: FileText },
+    { value: "BUSINESS", label: "Business", icon: BriefcaseBusiness },
+    { value: "OTHER", label: "Other", icon: PawPrint },
 ];
 
 const emptyForm = {
@@ -60,7 +41,7 @@ const emptyForm = {
 export default function FinalWishes() {
     const queryClient = useQueryClient();
     const [search, setSearch] = useState("");
-    const [activeFilter, setActiveFilter] = useState("All");
+    const [activeFilter, setActiveFilter] = useState("ALL");
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [form, setForm] = useState(emptyForm);
@@ -71,7 +52,10 @@ export default function FinalWishes() {
     });
 
     const saveMutation = useMutation({
-        mutationFn: (payload) => (editingId ? updateFinalWish(editingId, payload) : createFinalWish(payload)),
+        mutationFn: (payload) =>
+            editingId
+                ? updateFinalWish(editingId, payload)
+                : createFinalWish(payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["final-wishes"] });
             toast.success(editingId ? "Wish updated." : "Wish created.");
@@ -95,24 +79,30 @@ export default function FinalWishes() {
         const query = search.trim().toLowerCase();
 
         return wishes.filter((wish) => {
-            const matchesFilter = activeFilter === "All" || wish.category === activeFilter;
-            const matchesQuery = !query || `${wish.title} ${wish.content} ${wish.category}`.toLowerCase().includes(query);
+            const matchesFilter =
+                activeFilter === "ALL" ||
+                wish.category === activeFilter;
+
+            const matchesQuery =
+                !query ||
+                `${wish.title} ${wish.content} ${wish.category}`
+                    .toLowerCase()
+                    .includes(query);
+
             return matchesFilter && matchesQuery;
         });
     }, [activeFilter, search, wishes]);
 
-    const completion = Math.min(100, Math.round((wishes.length / 7) * 100));
+    const groupedCounts = useMemo(() => {
+        return categoryOptions.reduce((accumulator, option) => {
+            accumulator[option.value] = wishes.filter((wish) => wish.category === option.value).length;
+            return accumulator;
+        }, {});
+    }, [wishes]);
 
-    const recentUpdates = [...wishes]
-        .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt))
-        .slice(0, 2);
-
-    const openCreate = (category = "PERSONAL") => {
+    const openCreate = () => {
         setEditingId(null);
-        setForm({
-            ...emptyForm,
-            category,
-        });
+        setForm(emptyForm);
         setShowForm(true);
     };
 
@@ -126,6 +116,20 @@ export default function FinalWishes() {
         setShowForm(true);
     };
 
+    const handleSave = () => {
+        if (!form.title.trim()) {
+            toast.error("Title is required.");
+            return;
+        }
+
+        if (!form.content.trim()) {
+            toast.error("Directive details are required.");
+            return;
+        }
+
+        saveMutation.mutate(form);
+    };
+
     if (isLoading) {
         return <Loading />;
     }
@@ -134,10 +138,10 @@ export default function FinalWishes() {
         <div className="mx-auto max-w-[1120px]">
             <DashboardPageHeader
                 title="Final Wishes"
-                description="Document your preferences for ceremonies, charitable donations, and personal parting messages. These instructions provide clarity during difficult times."
+                description="Record the personal instructions, wishes, and directives your successor should understand clearly."
                 action={
                     <button
-                        onClick={() => openCreate()}
+                        onClick={openCreate}
                         className="inline-flex h-11 items-center gap-2 rounded-[8px] bg-[#2f6b55] px-4 text-sm font-semibold text-white transition hover:bg-[#255743]"
                     >
                         <Plus size={15} />
@@ -149,56 +153,116 @@ export default function FinalWishes() {
             <DashboardToolbar
                 searchValue={search}
                 onSearchChange={setSearch}
-                searchPlaceholder="Search wishes, categories..."
+                onSearchSubmit={() => {}}
+                searchPlaceholder="Search directives..."
                 action={
-                    <button className="inline-flex h-10 items-center rounded-[8px] bg-[#2f6b55] px-4 text-xs font-semibold text-white transition hover:bg-[#255743]">
-                        Search
-                    </button>
+                    search || activeFilter !== "ALL" ? (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setSearch("");
+                                setActiveFilter("ALL");
+                            }}
+                            className="inline-flex h-10 items-center rounded-[8px] border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+                        >
+                            Reset
+                        </button>
+                    ) : null
                 }
             />
 
+            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                {categoryOptions.map((option) => {
+                    const Icon = option.icon;
+                    const isActive = activeFilter === option.value;
+
+                    return (
+                        <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => setActiveFilter(option.value)}
+                            className={`rounded-[16px] border p-4 text-left transition ${
+                                isActive
+                                    ? "border-[#2f6b55] bg-[#f4faf7] shadow-[0_8px_20px_rgba(47,107,85,0.08)]"
+                                    : "border-slate-200 bg-white hover:border-slate-300"
+                            }`}
+                        >
+                            <span className={`grid size-10 place-items-center rounded-[10px] ${
+                                isActive ? "bg-[#2f6b55] text-white" : "bg-slate-50 text-[#2f6b55]"
+                            }`}>
+                                <Icon size={18} />
+                            </span>
+                            <p className="mt-4 text-sm font-semibold text-slate-900">
+                                {option.label}
+                            </p>
+                            <p className="mt-1 text-2xl font-semibold tracking-[-0.04em] text-slate-900">
+                                {groupedCounts[option.value] || 0}
+                            </p>
+                        </button>
+                    );
+                })}
+            </div>
+
+            <div className="mt-4">
+                <button
+                    type="button"
+                    onClick={() => setActiveFilter("ALL")}
+                    className={`inline-flex h-10 items-center rounded-full px-4 text-sm font-medium transition ${
+                        activeFilter === "ALL"
+                            ? "bg-[#2f6b55] text-white"
+                            : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+                    }`}
+                >
+                    All Directives
+                </button>
+            </div>
+
             {showForm ? (
-                <section className="mt-6 rounded-[14px] border border-slate-200 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                <section className="mt-6 rounded-[18px] border border-slate-200 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
                     <h2 className="text-lg font-semibold text-slate-900">
-                        {editingId ? "Edit Wish" : "Create New Wish"}
+                        {editingId ? "Edit Directive" : "Create New Directive"}
                     </h2>
+
                     <div className="mt-5 grid gap-4">
                         <select
                             value={form.category}
                             onChange={(event) => setForm({ ...form, category: event.target.value })}
                             className="h-12 rounded-[10px] border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-[#2f6b55]"
                         >
-                            <option value="PERSONAL">Personal</option>
-                            <option value="FAMILY">Family</option>
-                            <option value="ASSET">Asset</option>
-                            <option value="OTHER">Other</option>
+                            {categoryOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
                         </select>
                         <input
                             value={form.title}
                             onChange={(event) => setForm({ ...form, title: event.target.value })}
-                            placeholder="Wish title"
+                            placeholder="Directive title"
                             className="h-12 rounded-[10px] border border-slate-300 px-4 text-sm outline-none transition focus:border-[#2f6b55]"
                         />
                         <textarea
                             value={form.content}
                             onChange={(event) => setForm({ ...form, content: event.target.value })}
-                            rows={5}
-                            placeholder="Write your directive..."
+                            rows={6}
+                            placeholder="Write your directive clearly..."
                             className="rounded-[10px] border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-[#2f6b55]"
                         />
                     </div>
+
                     <div className="mt-5 flex gap-3">
                         <button
-                            onClick={() => saveMutation.mutate(form)}
+                            onClick={handleSave}
                             disabled={saveMutation.isPending}
                             className="inline-flex h-11 items-center rounded-[8px] bg-[#2f6b55] px-5 text-sm font-semibold text-white disabled:opacity-60"
                         >
-                            {saveMutation.isPending ? "Saving..." : "Save Wish"}
+                            {saveMutation.isPending ? "Saving..." : "Save Directive"}
                         </button>
                         <button
                             onClick={() => {
                                 setShowForm(false);
                                 setEditingId(null);
+                                setForm(emptyForm);
                             }}
                             className="inline-flex h-11 items-center rounded-[8px] border border-slate-300 px-5 text-sm font-medium text-slate-600"
                         >
@@ -208,142 +272,97 @@ export default function FinalWishes() {
                 </section>
             ) : null}
 
-            <div className="mt-6 grid gap-5 xl:grid-cols-[0.85fr_1.6fr]">
-                <section className="rounded-[14px] border border-slate-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                    <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                        <span className="size-1.5 rounded-full bg-[#2f6b55]" />
-                        Status
-                    </p>
-                    <h2 className="mt-5 text-[2rem] font-semibold tracking-[-0.05em] text-slate-900">
-                        {wishes.length > 0 ? "In Progress" : "Not Started"}
-                    </h2>
-                    <p className="mt-2 text-sm leading-6 text-slate-500">
-                        {wishes.length} of 7 recommended categories completed.
-                    </p>
-                    <div className="mt-8 h-2 rounded-full bg-slate-200">
-                        <div className="h-full rounded-full bg-[#356f5a]" style={{ width: `${completion}%` }} />
-                    </div>
-                    <div className="mt-3 flex items-center justify-between text-[11px] text-slate-500">
-                        <span>Completeness</span>
-                        <span>{completion}%</span>
-                    </div>
-                </section>
-
-                <section className="rounded-[14px] border border-slate-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                    <div className="flex items-center justify-between">
-                        <h2 className="flex items-center gap-2 text-[1.05rem] font-semibold text-slate-900">
-                            <CalendarClock size={18} />
-                            Recent Updates
-                        </h2>
-                        <button className="text-xs font-medium text-[#2f6b55]">View All</button>
-                    </div>
-                    <div className="mt-4 divide-y divide-slate-200">
-                        {recentUpdates.length > 0 ? recentUpdates.map((wish) => (
-                            <div key={wish._id} className="flex items-start justify-between gap-4 py-4">
-                                <div className="flex items-start gap-3">
-                                    <span className="mt-0.5 grid size-8 place-items-center rounded-full border border-slate-200 bg-slate-50 text-slate-500">
-                                        <FileText size={14} />
-                                    </span>
-                                    <div>
-                                        <p className="text-sm font-medium text-slate-900">{wish.title}</p>
-                                        <p className="mt-1 text-xs text-slate-500">{formatDate(wish.updatedAt || wish.createdAt)}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        )) : (
-                            <div className="py-8 text-sm text-slate-500">
-                                No final wish updates yet.
-                            </div>
-                        )}
-                    </div>
-                </section>
-            </div>
-
-            <div className="mt-8 flex items-center justify-between">
-                <h2 className="text-[1.65rem] font-semibold tracking-[-0.04em] text-slate-900">
-                    Categorized Directives
-                </h2>
-                <div className="flex items-center gap-2 text-xs">
-                    {["All", "PERSONAL", "FAMILY", "ASSET"].map((filter) => (
-                        <button
-                            key={filter}
-                            onClick={() => setActiveFilter(filter)}
-                            className={`rounded-full px-3 py-1.5 transition ${activeFilter === filter
-                                ? "bg-slate-200 text-slate-900"
-                                : "text-slate-500 hover:bg-slate-100"
-                                }`}
-                        >
-                            {filter === "All" ? "All" : filter.charAt(0) + filter.slice(1).toLowerCase()}
-                        </button>
-                    ))}
+            <section className="mt-6 overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                <div className="grid grid-cols-[minmax(0,1.6fr)_0.8fr_0.8fr_0.8fr] gap-4 border-b border-slate-200 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    <span>Directive</span>
+                    <span>Category</span>
+                    <span>Updated</span>
+                    <span>Actions</span>
                 </div>
-            </div>
 
-            <div className="mt-4 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                {wishGroups.map((group) => {
-                    const Icon = group.icon;
-                    const items = filteredWishes.filter((wish) => wish.category === group.key);
-                    const latestWish = items[0];
+                {filteredWishes.length > 0 ? (
+                    <div className="divide-y divide-slate-200">
+                        {filteredWishes.map((wish) => {
+                            const option = categoryOptions.find((item) => item.value === wish.category);
+                            const Icon = option?.icon || FileText;
 
-                    return (
-                        <article
-                            key={group.key}
-                            className="flex min-h-[220px] flex-col rounded-[14px] border border-slate-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
-                        >
-                            <div className="flex items-start justify-between">
-                                <span className="grid size-11 place-items-center rounded-[10px] border border-slate-200 bg-[#fbfcfd] text-[#2f6b55]">
-                                    <Icon size={19} />
-                                </span>
-                                <span className={`rounded-[6px] px-2 py-1 text-[11px] ${items.length > 0 ? "border border-slate-200 bg-slate-50 text-slate-600" : "bg-rose-50 text-rose-600"}`}>
-                                    {items.length > 0 ? `${items.length} Item${items.length > 1 ? "s" : ""}` : "Empty"}
-                                </span>
-                            </div>
-                            <h3 className="mt-5 text-[1.1rem] font-semibold text-slate-900">{group.title}</h3>
-                            <p className="mt-3 text-sm leading-6 text-slate-500">{group.description}</p>
+                            return (
+                                <div
+                                    key={wish._id}
+                                    className="grid grid-cols-[minmax(0,1.6fr)_0.8fr_0.8fr_0.8fr] gap-4 px-5 py-4"
+                                >
+                                    <div className="min-w-0">
+                                        <div className="flex items-start gap-3">
+                                            <span className="mt-0.5 grid size-10 shrink-0 place-items-center rounded-[10px] bg-slate-50 text-[#2f6b55] ring-1 ring-slate-200">
+                                                <Icon size={18} />
+                                            </span>
+                                            <div className="min-w-0">
+                                                <p className="truncate text-sm font-semibold text-slate-900">
+                                                    {wish.title}
+                                                </p>
+                                                <p className="mt-1 line-clamp-2 text-sm text-slate-500">
+                                                    {wish.content}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                            <div className="mt-auto border-t border-slate-200 pt-4">
-                                {latestWish ? (
-                                    <div className="flex items-center justify-between gap-3">
+                                    <div className="flex items-center">
+                                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                                            {option?.label || wish.category}
+                                        </span>
+                                    </div>
+
+                                    <div className="flex items-center text-sm text-slate-600">
+                                        {formatDate(wish.updatedAt || wish.createdAt)}
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
                                         <button
-                                            onClick={() => openEdit(latestWish)}
-                                            className="text-sm font-medium text-slate-700 transition hover:text-[#2f6b55]"
+                                            type="button"
+                                            onClick={() => openEdit(wish)}
+                                            title={`Edit ${wish.title}`}
+                                            className="inline-flex size-8 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-[#2f6b55]"
                                         >
-                                            {latestWish.title}
+                                            <SquarePen size={15} />
                                         </button>
                                         <button
-                                            onClick={() => deleteMutation.mutate(latestWish._id)}
-                                            className="text-slate-400 transition hover:text-rose-600"
+                                            type="button"
+                                            onClick={() => deleteMutation.mutate(wish._id)}
+                                            title={`Delete ${wish.title}`}
+                                            className="inline-flex size-8 items-center justify-center rounded-md text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
                                         >
                                             <Trash2 size={15} />
                                         </button>
                                     </div>
-                                ) : (
-                                    <button
-                                        onClick={() => openCreate(group.key)}
-                                        className="flex w-full items-center justify-between text-sm font-medium text-slate-500 transition hover:text-[#2f6b55]"
-                                    >
-                                        <span>Setup Now</span>
-                                        <ArrowRight size={15} />
-                                    </button>
-                                )}
-                            </div>
-                        </article>
-                    );
-                })}
-
-                <button
-                    onClick={() => openCreate("OTHER")}
-                    className="flex min-h-[220px] flex-col items-center justify-center rounded-[14px] border border-dashed border-slate-300 bg-white p-5 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition hover:border-[#b9d4c8] hover:bg-[#fbfcfd]"
-                >
-                    <span className="grid size-12 place-items-center rounded-full bg-slate-100 text-slate-500">
-                        <Plus size={20} />
-                    </span>
-                    <p className="mt-5 text-[1.1rem] font-semibold text-slate-900">Custom Category</p>
-                    <p className="mt-2 max-w-[220px] text-sm leading-6 text-slate-500">
-                        Create a specific directive group.
-                    </p>
-                </button>
-            </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <div className="px-6 py-14 text-center">
+                        <p className="text-base font-medium text-slate-700">
+                            {wishes.length === 0
+                                ? "No final wishes yet."
+                                : "No directives match the current filter."}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-500">
+                            {wishes.length === 0
+                                ? "Create clear instructions your successor can rely on when the time comes."
+                                : "Try clearing search or switching the category filter."}
+                        </p>
+                        {wishes.length === 0 ? (
+                            <button
+                                onClick={openCreate}
+                                className="mt-5 inline-flex h-11 items-center gap-2 rounded-[8px] bg-[#2f6b55] px-5 text-sm font-semibold text-white"
+                            >
+                                <Plus size={15} />
+                                Add First Directive
+                            </button>
+                        ) : null}
+                    </div>
+                )}
+            </section>
         </div>
     );
 }

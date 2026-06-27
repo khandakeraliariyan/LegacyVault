@@ -70,11 +70,12 @@ const deleteSuccessor = async (req, res, next) => {
 
 const getSuccessorAccess = async (req, res, next) => {
     try {
-        const { email } = req.query;
+        const { email, nidNumber } = req.query;
 
         const result =
             await successorService.getSuccessorAccess(
-                email
+                email,
+                nidNumber
             );
 
         res.status(200).json({
@@ -94,11 +95,11 @@ const getSuccessorAccess = async (req, res, next) => {
 
 const getReleasedVault = async (req, res, next) => {
     try {
-        const { email } = req.query;
+        const { claimId } = req.query;
 
         const vault =
             await successorService.getReleasedVault(
-                email
+                claimId
             );
 
         res.status(200).json({

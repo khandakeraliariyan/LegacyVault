@@ -37,8 +37,22 @@ const deleteMessage = async (userId, messageId) => {
     );
 };
 
+const updateMessage = async (userId, messageId, payload) => {
+    return await FutureMessage.findOneAndUpdate(
+        {
+            _id: messageId,
+            ownerId: userId,
+        },
+        payload,
+        {
+            new: true,
+        }
+    );
+};
+
 module.exports = {
     createFutureMessage,
     getMyMessages,
     deleteMessage,
+    updateMessage,
 };

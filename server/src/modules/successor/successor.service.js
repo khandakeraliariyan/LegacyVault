@@ -1,4 +1,5 @@
 const Successor = require("./successor.model");
+const Claim = require("../claim/claim.model");
 
 const User = require("../user/user.model");
 
@@ -12,6 +13,9 @@ const { createAuditLog } = require("../audit/audit.service");
 
 const normalizeEmail = (email = "") =>
     email.trim().toLowerCase();
+
+const normalizeNidNumber = (value = "") =>
+    value.replace(/\s+/g, "").trim();
 
 const ensureSuccessorEmailAvailable = async (userId, email) => {
     const existingSuccessor = await Successor.findOne({
@@ -50,6 +54,7 @@ const createSuccessor = async (userId, payload) => {
             ownerId: userId,
             ...payload,
             email: normalizeEmail(payload.email),
+            nidNumber: normalizeNidNumber(payload.nidNumber),
         });
 
     await createAuditLog({
@@ -88,6 +93,11 @@ const updateSuccessor = async (userId, payload) => {
                         email: normalizeEmail(payload.email),
                     }
                     : {}),
+                ...(payload.nidNumber
+                    ? {
+                        nidNumber: normalizeNidNumber(payload.nidNumber),
+                    }
+                    : {}),
             },
             {
                 new: true,
@@ -107,10 +117,10 @@ const deleteSuccessor = async (userId) => {
     });
 };
 
-const getSuccessorAccess = async (successorEmail) => {
+const getSuccessorAccess = async (successorEmail, nidNumber) => {
     const successor =
         await Successor.findOne({
-            email: successorEmail,
+            email: normalizeEmail(successorEmail),
         });
 
     if (!successor) {
@@ -119,20 +129,33 @@ const getSuccessorAccess = async (successorEmail) => {
         );
     }
 
+    if (
+        normalizeNidNumber(successor.nidNumber) !==
+        normalizeNidNumber(nidNumber)
+    ) {
+        throw new Error("NID number did not match");
+    }
+
     return successor;
 };
 
-const getReleasedVault = async (successorEmail) => {
-    const successor = await Successor.findOne({
-        email: successorEmail,
-    });
+const getReleasedVault = async (claimId) => {
+    const claim = await Claim.findById(claimId);
+
+    if (!claim) {
+        throw new Error("Claim not found");
+    }
+
+    if (claim.status !== "APPROVED") {
+        throw new Error("Claim is not approved for vault access");
+    }
+
+    const successor = await Successor.findById(
+        claim.successorId
+    );
 
     if (!successor) {
         throw new Error("Successor not found");
-    }
-
-    if (!successor.vaultAccessGranted) {
-        throw new Error("Vault access not granted");
     }
 
     const [owner, documents, finalWishes, futureMessages] = await Promise.all([
@@ -145,6 +168,7 @@ const getReleasedVault = async (successorEmail) => {
     return {
         owner,
         successor,
+        claim,
         documents,
         finalWishes,
         futureMessages,

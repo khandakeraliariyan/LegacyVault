@@ -32,6 +32,31 @@ const documentSchema =
                 required: true,
             },
 
+            fileSize: {
+                type: Number,
+                default: 0,
+            },
+
+            fileExtension: {
+                type: String,
+                default: "",
+            },
+
+            resourceType: {
+                type: String,
+                default: "image",
+            },
+
+            status: {
+                type: String,
+                enum: [
+                    "VERIFIED",
+                    "ARCHIVED",
+                    "ACTION_REQUIRED",
+                ],
+                default: "VERIFIED",
+            },
+
             fileUrl: {
                 type: String,
                 required: true,

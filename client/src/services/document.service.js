@@ -22,3 +22,24 @@ export const deleteDocument = async (id) => {
     const response = await api.delete(`/documents/${id}`);
     return response.data;
 };
+
+export const updateDocumentStatus = async ({ id, status }) => {
+    const response = await api.patch(`/documents/${id}/status`, { status });
+    return response.data.data;
+};
+
+export const openDocumentFile = async (id) => {
+    const response = await api.get(`/documents/${id}/open`, {
+        responseType: "blob",
+    });
+
+    return response.data;
+};
+
+export const downloadDocumentFile = async (id) => {
+    const response = await api.get(`/documents/${id}/download`, {
+        responseType: "blob",
+    });
+
+    return response.data;
+};

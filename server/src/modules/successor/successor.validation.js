@@ -7,6 +7,8 @@ const createSuccessorSchema = z.object({
 
     phone: z.string(),
 
+    nidNumber: z.string(),
+
     relationship: z.string(),
 });
 

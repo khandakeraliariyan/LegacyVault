@@ -22,7 +22,7 @@ import {
     fetchCurrentUser,
 } from "../services/token.service";
 
-import { getToken, removeToken } from "../utils/storage";
+import { getToken, removeToken, saveToken } from "../utils/storage";
 
 export const AuthContext = createContext();
 
@@ -45,9 +45,11 @@ export default function AuthProvider({ children }) {
 
     const syncBackend = async (firebaseUser) => {
         const firebaseToken = await firebaseUser.getIdToken();
+        saveToken(firebaseToken);
         await exchangeFirebaseToken(firebaseToken);
         const currentUser = await fetchCurrentUser();
         setProfile(currentUser);
+        setUser(toAuthUser(currentUser));
         return currentUser;
     };
 
@@ -109,44 +111,37 @@ export default function AuthProvider({ children }) {
     useEffect(() => {
         let active = true;
 
-        const bootstrap = async () => {
-            await hydrateFromStoredToken();
-
-            const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
                 if (!active) {
                     return;
                 }
 
-                if (currentUser) {
-                    setUser(currentUser);
-
-                    try {
-                        const idToken = await currentUser.getIdToken();
-                        localStorage.setItem("accessToken", idToken);
+                try {
+                    if (currentUser) {
                         await syncBackend(currentUser);
-                    } catch {
-                        setProfile(null);
+                    } else {
+                        const restored =
+                            await hydrateFromStoredToken();
+
+                        if (!restored) {
+                            setUser(null);
+                            setProfile(null);
+                        }
                     }
-                } else if (!getToken()) {
+                } catch {
+                    removeToken();
                     setUser(null);
                     setProfile(null);
+                } finally {
+                    if (active) {
+                        setLoading(false);
+                    }
                 }
-
-                setLoading(false);
             });
-
-            if (!auth.currentUser && !getToken()) {
-                setLoading(false);
-            }
-
-            return unsubscribe;
-        };
-
-        let unsubscribePromise = bootstrap();
 
         return () => {
             active = false;
-            unsubscribePromise.then((unsubscribe) => unsubscribe?.());
+            unsubscribe();
         };
     }, []);
 

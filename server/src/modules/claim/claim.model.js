@@ -39,10 +39,18 @@ const claimSchema =
                 required: true,
             },
 
+            claimantRelationship: {
+                type: String,
+                required: true,
+            },
+
+            claimantNidNumber: {
+                type: String,
+                required: true,
+            },
+
             identityDocumentUrl: {
                 type: String,
-
-                required: true,
             },
 
             score: {

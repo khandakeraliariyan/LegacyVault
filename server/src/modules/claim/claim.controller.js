@@ -21,6 +21,23 @@ const createClaim =
         }
     };
 
+const getMyClaims =
+    async (req, res, next) => {
+        try {
+            const claims =
+                await claimService.getClaimsForOwner(
+                    req.user._id
+                );
+
+            res.status(200).json({
+                success: true,
+                data: claims,
+            });
+        } catch (error) {
+            next(error);
+        }
+    };
+
 const getVerificationQuestions =
     async (req, res, next) => {
         try {
@@ -43,4 +60,5 @@ const getVerificationQuestions =
 module.exports = {
     createClaim,
     getVerificationQuestions,
+    getMyClaims,
 };

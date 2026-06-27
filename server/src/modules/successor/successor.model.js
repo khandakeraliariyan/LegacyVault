@@ -28,6 +28,12 @@ const successorSchema = new mongoose.Schema(
             required: true,
         },
 
+        nidNumber: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+
         relationship: {
             type: String,
             required: true,

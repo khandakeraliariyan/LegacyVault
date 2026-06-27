@@ -2,8 +2,9 @@ import {
     NavLink,
 } from "react-router-dom";
 import {
+    CircleHelp,
+    LogOut,
     Shield,
-    Zap,
 } from "lucide-react";
 
 import {
@@ -13,21 +14,24 @@ import BrandLogo from "../common/BrandLogo";
 import useAuth from "../../hooks/useAuth";
 
 export default function Sidebar() {
-    const { profile } = useAuth();
+    const {
+        profile,
+        logout,
+    } = useAuth();
 
     return (
-        <aside className="hidden w-64 shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col">
-            <div className="px-5 py-5">
+        <aside className="hidden w-[248px] shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col">
+            <div className="border-b border-slate-200 px-5 py-5">
                 <BrandLogo
                     iconClassName="h-8 w-8"
-                    textClassName="text-lg text-emerald-700"
+                    textClassName="text-[1.55rem] font-semibold tracking-[-0.03em] text-slate-900"
                 />
                 <p className="mt-1 text-xs font-medium text-slate-600">
-                    Secure Digital Estate
+                    Premium Account
                 </p>
             </div>
 
-            <nav className="space-y-2 p-2">
+            <nav className="space-y-1 px-3 py-4">
                 {userSidebar.map((item) => {
                     const Icon = item.icon;
 
@@ -37,13 +41,13 @@ export default function Sidebar() {
                             to={item.path}
                             end={item.path === "/dashboard"}
                             className={({ isActive }) =>
-                                `flex items-center gap-3 border-l-4 px-5 py-4 text-sm font-medium transition ${isActive
-                                    ? "border-emerald-700 bg-emerald-50 text-emerald-800"
+                                `flex items-center gap-3 rounded-[10px] border px-3.5 py-3 text-sm font-medium transition ${isActive
+                                    ? "border-slate-200 bg-slate-100 text-[#1f5b46] shadow-[inset_-3px_0_0_0_#1f5b46]"
                                     : "border-transparent text-slate-700 hover:bg-slate-50"
-                                }`
+                                    }`
                             }
                         >
-                            <Icon size={17} />
+                            <Icon size={16} />
                             {item.title}
                         </NavLink>
                     );
@@ -52,22 +56,29 @@ export default function Sidebar() {
                     <NavLink
                         to="/admin"
                         className={({ isActive }) =>
-                            `flex items-center gap-3 border-l-4 px-5 py-4 text-sm font-medium transition ${isActive
-                                ? "border-emerald-700 bg-emerald-50 text-emerald-800"
+                            `flex items-center gap-3 rounded-[10px] border px-3.5 py-3 text-sm font-medium transition ${isActive
+                                ? "border-slate-200 bg-slate-100 text-[#1f5b46] shadow-[inset_-3px_0_0_0_#1f5b46]"
                                 : "border-transparent text-slate-700 hover:bg-slate-50"
                             }`
                         }
                     >
-                        <Shield size={17} />
+                        <Shield size={16} />
                         Admin Console
                     </NavLink>
                 ) : null}
             </nav>
 
-            <div className="mt-auto p-5">
-                <button className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 text-sm font-bold text-white shadow-sm">
-                    <Zap size={15} />
-                    Upgrade to Pro
+            <div className="mt-auto space-y-3 border-t border-slate-200 p-4">
+                <button className="flex h-11 w-full items-center gap-3 rounded-[10px] px-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
+                    <CircleHelp size={16} />
+                    Help Center
+                </button>
+                <button
+                    onClick={logout}
+                    className="flex h-11 w-full items-center justify-between rounded-[10px] border border-slate-200 px-3 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                >
+                    <span>Logout</span>
+                    <LogOut size={15} />
                 </button>
             </div>
         </aside>

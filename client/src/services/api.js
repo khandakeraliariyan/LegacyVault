@@ -5,7 +5,6 @@ import { getToken, removeToken } from "../utils/storage";
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1",
-    withCredentials: true,
 });
 
 async function resolveAuthToken() {

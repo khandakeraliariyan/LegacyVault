@@ -4,6 +4,7 @@ import {
 
 import AdminLayout from "../layouts/AdminLayout";
 import DashboardLayout from "../layouts/DashboardLayout";
+import MainLayout from "../layouts/MainLayout";
 import AdminRoute from "./AdminRoute";
 import PrivateRoute from "./PrivateRoute";
 
@@ -33,16 +34,21 @@ import VaultAccess from "../pages/successor/VaultAccess";
 export const router =
     createBrowserRouter([
         {
-            path: "/",
-            element: <Home />,
-        },
-        {
-            path: "/login",
-            element: <Login />,
-        },
-        {
-            path: "/register",
-            element: <Register />,
+            element: <MainLayout />,
+            children: [
+                {
+                    path: "/",
+                    element: <Home />,
+                },
+                {
+                    path: "/login",
+                    element: <Login />,
+                },
+                {
+                    path: "/register",
+                    element: <Register />,
+                },
+            ],
         },
         {
             path: "/claim",

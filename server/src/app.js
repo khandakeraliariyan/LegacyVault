@@ -9,17 +9,26 @@ const errorMiddleware = require("./middlewares/error.middleware");
 
 const app = express();
 
-app.use(cors());
+const allowedOrigin =
+    process.env.CLIENT_URL ||
+    "http://localhost:5173";
+
+app.use(
+    cors({
+        origin: allowedOrigin,
+        credentials: true,
+    })
+);
 
 app.use(express.json());
-
-app.use("/api/v1", routes);
-
-app.use(errorMiddleware);
 
 app.use(cookieParser());
 
 app.use(morgan("dev"));
+
+app.use("/api/v1", routes);
+
+app.use(errorMiddleware);
 
 app.get("/", (req, res) => {
     res.json({

@@ -1,16 +1,16 @@
 import {
-    Download,
-    Eye,
     FileImage,
     FileText,
     Lock,
     Trash2,
-    UploadCloud,
+    Upload,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
+import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
+import DashboardToolbar from "../../components/dashboard/DashboardToolbar";
 import Loading from "../../components/common/Loading";
 import {
     deleteDocument,
@@ -20,16 +20,14 @@ import {
 import { getApiErrorMessage } from "../../services/api";
 import { formatCategoryLabel, formatDate } from "../../utils/format";
 
-const filters = ["All Documents", "Identity", "Financial", "Insurance", "Property", "Business", "Digital Assets"];
-
-const categoryMap = {
-    Identity: "IDENTITY",
-    Financial: "FINANCIAL",
-    Insurance: "INSURANCE",
-    Property: "PROPERTY",
-    Business: "BUSINESS",
-    "Digital Assets": "DIGITAL_ASSETS",
-};
+const categoryOptions = [
+    { label: "Legal", value: "IDENTITY" },
+    { label: "Financial", value: "FINANCIAL" },
+    { label: "Insurance", value: "INSURANCE" },
+    { label: "Property", value: "PROPERTY" },
+    { label: "Business", value: "BUSINESS" },
+    { label: "Digital Assets", value: "DIGITAL_ASSETS" },
+];
 
 const iconByCategory = {
     IDENTITY: FileText,
@@ -43,7 +41,7 @@ const iconByCategory = {
 export default function Documents() {
     const queryClient = useQueryClient();
     const fileInputRef = useRef(null);
-    const [activeFilter, setActiveFilter] = useState("All Documents");
+    const [search, setSearch] = useState("");
     const [uploadCategory, setUploadCategory] = useState("IDENTITY");
 
     const { data: documents = [], isLoading } = useQuery({
@@ -55,25 +53,35 @@ export default function Documents() {
         mutationFn: uploadDocument,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["documents"] });
-            toast.success("Document uploaded");
+            toast.success("Document uploaded.");
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, "Upload failed")),
+        onError: (error) => toast.error(getApiErrorMessage(error, "Upload failed.")),
     });
 
     const deleteMutation = useMutation({
         mutationFn: deleteDocument,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["documents"] });
-            toast.success("Document deleted");
+            toast.success("Document deleted.");
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, "Delete failed")),
+        onError: (error) => toast.error(getApiErrorMessage(error, "Delete failed.")),
     });
 
-    const filtered = documents.filter(
-        (doc) => activeFilter === "All Documents" || doc.category === categoryMap[activeFilter]
-    );
+    const filteredDocuments = useMemo(() => {
+        const query = search.trim().toLowerCase();
 
-    const handleUploadClick = () => fileInputRef.current?.click();
+        if (!query) {
+            return documents;
+        }
+
+        return documents.filter((document) =>
+            `${document.documentName} ${document.category}`.toLowerCase().includes(query)
+        );
+    }, [documents, search]);
+
+    const handleUploadClick = () => {
+        fileInputRef.current?.click();
+    };
 
     const handleFileChange = (event) => {
         const file = event.target.files?.[0];
@@ -96,109 +104,161 @@ export default function Documents() {
     }
 
     return (
-        <div className="mx-auto max-w-6xl">
-            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold">Document Vault</h1>
-                    <p className="mt-2 text-base text-slate-600">Manage and secure your most important digital assets.</p>
-                </div>
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <select
-                        value={uploadCategory}
-                        onChange={(event) => setUploadCategory(event.target.value)}
-                        className="h-12 rounded-xl border border-slate-200 px-4 text-sm"
-                    >
-                        {Object.entries(categoryMap).map(([label, value]) => (
-                            <option key={value} value={value}>{label}</option>
-                        ))}
-                    </select>
-                    <button
-                        onClick={handleUploadClick}
-                        disabled={uploadMutation.isPending}
-                        className="inline-flex h-14 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-8 font-bold text-white transition hover:bg-emerald-800 disabled:opacity-60"
-                    >
-                        <FileText size={18} />
-                        {uploadMutation.isPending ? "Uploading..." : "Upload Document"}
+        <div className="mx-auto max-w-[1120px]">
+            <DashboardPageHeader
+                title="Document Vault"
+                description="Securely manage and organize your essential legacy files."
+                action={
+                    <div className="flex items-center gap-3">
+                        <select
+                            value={uploadCategory}
+                            onChange={(event) => setUploadCategory(event.target.value)}
+                            className="h-11 rounded-[8px] border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none"
+                        >
+                            {categoryOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
+                        <button
+                            onClick={handleUploadClick}
+                            disabled={uploadMutation.isPending}
+                            className="inline-flex h-11 items-center gap-2 rounded-[8px] bg-[#2f6b55] px-4 text-sm font-semibold text-white transition hover:bg-[#255743] disabled:opacity-60"
+                        >
+                            <Upload size={15} />
+                            {uploadMutation.isPending ? "Uploading..." : "Upload File"}
+                        </button>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            className="hidden"
+                            onChange={handleFileChange}
+                        />
+                    </div>
+                }
+            />
+
+            <DashboardToolbar
+                searchValue={search}
+                onSearchChange={setSearch}
+                searchPlaceholder="Search across all legacy files..."
+                action={
+                    <button className="inline-flex h-10 items-center rounded-[8px] bg-[#2f6b55] px-4 text-xs font-semibold text-white transition hover:bg-[#255743]">
+                        Search
                     </button>
-                    <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} />
+                }
+                aside={
+                    <div className="flex items-center gap-3">
+                        <span className="inline-flex items-center gap-2 rounded-full border border-[#d4e7de] bg-[#eef9f4] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#2f6b55]">
+                            <Lock size={11} />
+                            End-to-End Encrypted
+                        </span>
+                    </div>
+                }
+            />
+
+            <section className="mt-6 overflow-hidden rounded-[12px] border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                <div className="grid grid-cols-[minmax(0,2.6fr)_1.1fr_1fr_1fr] gap-4 border-b border-slate-200 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    <span>File Name</span>
+                    <span>Category</span>
+                    <span>Date Added</span>
+                    <span>Status</span>
                 </div>
-            </div>
 
-            <div className="mt-7 flex flex-wrap gap-3">
-                {filters.map((filter) => (
-                    <button
-                        key={filter}
-                        onClick={() => setActiveFilter(filter)}
-                        className={`rounded-full px-6 py-2 text-sm font-bold transition ${
-                            activeFilter === filter
-                                ? "bg-emerald-700 text-white"
-                                : "bg-blue-50 text-slate-700 hover:bg-blue-100"
-                        }`}
-                    >
-                        {filter}
-                    </button>
-                ))}
-            </div>
+                {filteredDocuments.length > 0 ? (
+                    <div className="divide-y divide-slate-200">
+                        {filteredDocuments.slice(0, 8).map((document) => {
+                            const Icon = iconByCategory[document.category] || FileText;
+                            const statusTone = document.category === "DIGITAL_ASSETS"
+                                ? "bg-rose-50 text-rose-600"
+                                : "bg-emerald-50 text-[#2f6b55]";
 
-            {filtered.length === 0 ? (
-                <div className="mt-8 rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-slate-200">
-                    <p className="text-slate-600">No documents yet. Upload your first encrypted document.</p>
-                </div>
-            ) : (
-                <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                    {filtered.map((doc) => {
-                        const Icon = iconByCategory[doc.category] || FileText;
+                            return (
+                                <div
+                                    key={document._id}
+                                    className="grid grid-cols-[minmax(0,2.6fr)_1.1fr_1fr_1fr] gap-4 px-4 py-4 text-sm"
+                                >
+                                    <div className="flex min-w-0 items-start gap-3">
+                                        <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-[6px] border border-slate-200 bg-white text-slate-500">
+                                            <Icon size={14} />
+                                        </span>
+                                        <div className="min-w-0">
+                                            <p className="truncate font-medium text-slate-900">
+                                                {document.documentName}
+                                            </p>
+                                            <p className="mt-1 text-xs text-slate-500">
+                                                {formatDocumentSize(document)}
+                                            </p>
+                                        </div>
+                                    </div>
 
-                        return (
-                            <article key={doc._id} className="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-slate-200">
-                                <div className="flex items-start justify-between">
-                                    <span className="grid size-11 place-items-center rounded-lg bg-slate-50 text-emerald-700">
-                                        <Icon size={23} />
-                                    </span>
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-extrabold uppercase text-emerald-700">
-                                        <Lock size={10} />
-                                        Encrypted
-                                    </span>
-                                </div>
-                                <h2 className="mt-8 text-lg font-bold">{doc.documentName}</h2>
-                                <p className="mt-2 text-sm text-slate-600">Added: {formatDate(doc.createdAt)}</p>
-                                <div className="mt-10 flex items-center justify-between border-t border-slate-100 pt-5">
-                                    <span className="rounded-full bg-blue-50 px-4 py-1 text-[11px] font-bold uppercase text-blue-700">
-                                        {formatCategoryLabel(doc.category)}
-                                    </span>
-                                    <div className="flex gap-4 text-slate-700">
-                                        <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="hover:text-emerald-700">
-                                            <Eye size={15} />
-                                        </a>
-                                        <a href={doc.fileUrl} download className="hover:text-emerald-700">
-                                            <Download size={15} />
-                                        </a>
+                                    <div className="pt-0.5">
+                                        <span className="inline-flex rounded-[6px] border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-600">
+                                            {formatCategoryLabel(document.category)}
+                                        </span>
+                                    </div>
+
+                                    <div className="pt-0.5 text-slate-600">
+                                        {formatDate(document.createdAt)}
+                                    </div>
+
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${statusTone}`}>
+                                            <span className="size-1.5 rounded-full bg-current" />
+                                            {document.category === "DIGITAL_ASSETS" ? "Action Required" : "Verified"}
+                                        </span>
                                         <button
-                                            onClick={() => deleteMutation.mutate(doc._id)}
-                                            className="hover:text-red-600"
+                                            onClick={() => deleteMutation.mutate(document._id)}
                                             disabled={deleteMutation.isPending}
+                                            className="text-slate-400 transition hover:text-rose-600"
+                                            aria-label={`Delete ${document.documentName}`}
                                         >
                                             <Trash2 size={15} />
                                         </button>
                                     </div>
                                 </div>
-                            </article>
-                        );
-                    })}
-                </div>
-            )}
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <div className="px-6 py-12 text-center text-sm text-slate-500">
+                        No documents found. Upload your first secure file.
+                    </div>
+                )}
 
-            <button
-                onClick={handleUploadClick}
-                className="mt-8 grid min-h-36 w-full place-items-center rounded-2xl border-2 border-dashed border-slate-200 bg-blue-50/30 transition hover:border-emerald-300 hover:bg-emerald-50/20"
-            >
-                <div className="text-center">
-                    <span className="mx-auto grid size-16 place-items-center rounded-full bg-emerald-100 text-emerald-700">
-                        <UploadCloud size={30} />
+                <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3 text-xs text-slate-500">
+                    <span>
+                        Showing {filteredDocuments.length > 0 ? `1-${Math.min(filteredDocuments.length, 8)}` : "0"} of {filteredDocuments.length} files
                     </span>
-                    <p className="mt-4 text-sm font-bold text-slate-700">Drag & drop files here or click to upload</p>
+                    <div className="flex items-center gap-2 text-slate-400">
+                        <button className="grid size-7 place-items-center rounded-md border border-transparent transition hover:border-slate-200 hover:bg-slate-50">
+                            {"<"}
+                        </button>
+                        <button className="grid size-7 place-items-center rounded-md border border-transparent transition hover:border-slate-200 hover:bg-slate-50">
+                            {">"}
+                        </button>
+                    </div>
                 </div>
-            </button>
+            </section>
         </div>
     );
+}
+
+function formatDocumentSize(document) {
+    const size = document.fileSize || document.size;
+
+    if (!size) {
+        return "Encrypted file";
+    }
+
+    if (size >= 1024 * 1024) {
+        return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    if (size >= 1024) {
+        return `${Math.round(size / 1024)} KB`;
+    }
+
+    return `${size} B`;
 }

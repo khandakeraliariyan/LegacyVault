@@ -1,15 +1,16 @@
 import {
+    ChevronRight,
     FileText,
-    KeyRound,
-    Mail,
-    Upload,
-    UserPlus,
+    FolderOpen,
+    UserRound,
 } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
+import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
+import DashboardToolbar from "../../components/dashboard/DashboardToolbar";
 import Loading from "../../components/common/Loading";
-import useAuth from "../../hooks/useAuth";
 import { getDocuments } from "../../services/document.service";
 import { getFinalWishes } from "../../services/finalWish.service";
 import { getFutureMessages } from "../../services/futureMessage.service";
@@ -18,8 +19,7 @@ import { getMySuccessor } from "../../services/successor.service";
 import { calculateVaultReadiness, formatDate, getInitials } from "../../utils/format";
 
 export default function Dashboard() {
-    const { profile } = useAuth();
-    const firstName = profile?.name?.split(" ")[0] || "there";
+    const [search, setSearch] = useState("");
 
     const results = useQueries({
         queries: [
@@ -50,155 +50,244 @@ export default function Dashboard() {
         finalWishes,
     });
 
-    const recentDocument = documents[0];
+    const filteredDocuments = useMemo(() => {
+        const query = search.trim().toLowerCase();
+
+        if (!query) {
+            return documents;
+        }
+
+        return documents.filter((document) =>
+            `${document.documentName} ${document.category}`.toLowerCase().includes(query)
+        );
+    }, [documents, search]);
+
+    const recentActivity = [
+        documents[0]
+            ? {
+                id: `doc-${documents[0]._id}`,
+                title: `${documents[0].documentName} updated`,
+                subtitle: "Uploaded by you",
+                date: documents[0].updatedAt || documents[0].createdAt,
+                icon: FileText,
+            }
+            : null,
+        successor
+            ? {
+                id: "successor",
+                title: successor.isVerified ? "Identity verification completed" : "Primary successor profile updated",
+                subtitle: `Primary successor: ${successor.fullName}`,
+                date: successor.updatedAt || successor.createdAt,
+                icon: UserRound,
+            }
+            : null,
+        finalWishes[0]
+            ? {
+                id: `wish-${finalWishes[0]._id}`,
+                title: `${finalWishes[0].title} revised`,
+                subtitle: "Final wishes updated",
+                date: finalWishes[0].updatedAt || finalWishes[0].createdAt,
+                icon: FolderOpen,
+            }
+            : null,
+    ].filter(Boolean);
 
     return (
-        <div className="mx-auto max-w-6xl">
-            <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold">Good Morning, {firstName}</h1>
-                    <p className="mt-2 max-w-md text-base leading-6 text-slate-600">
-                        Your digital legacy is currently {readiness}% secured and ready.
-                    </p>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                    <Link to="/dashboard/documents" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-7 text-sm font-medium text-slate-800">
-                        <Upload size={16} />
-                        Upload Document
-                    </Link>
-                    <Link to="/dashboard/final-wishes" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-7 text-sm font-medium text-slate-800">
-                        <Mail size={16} />
-                        Create Final Wish
-                    </Link>
-                    <Link to="/dashboard/documents" className="inline-flex h-14 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-8 text-base font-bold text-white sm:col-span-2 sm:mx-auto sm:w-56">
-                        + Quick Add
-                    </Link>
-                </div>
-            </div>
-
-            <div className="mt-8 grid gap-6 lg:grid-cols-[0.95fr_1fr_1fr]">
-                <section className="row-span-2 rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
-                    <div className="flex items-center justify-between">
-                        <p className="text-sm font-extrabold uppercase tracking-wide">Vault Readiness</p>
-                    </div>
-                    <div
-                        className="mx-auto mt-8 grid size-44 place-items-center rounded-full"
-                        style={{ background: `conic-gradient(#006f51 0 ${readiness}%, #e8eef8 ${readiness}% 100%)` }}
+        <div className="mx-auto max-w-[1120px]">
+            <DashboardPageHeader
+                title="Overview"
+                description="Manage and monitor your digital legacy assets."
+                action={
+                    <Link
+                        to="/dashboard/documents"
+                        className="inline-flex h-11 items-center gap-2 rounded-[8px] bg-[#2f6b55] px-4 text-sm font-semibold text-white transition hover:bg-[#255743]"
                     >
-                        <div className="grid size-32 place-items-center rounded-full bg-white text-center">
-                            <div>
-                                <p className="text-4xl font-extrabold text-emerald-700">{readiness}%</p>
-                                <p className="font-bold">Secured</p>
-                            </div>
-                        </div>
-                    </div>
-                    <p className="mt-8 text-center text-sm leading-6 text-slate-600">
-                        Complete your <Link to="/dashboard/verification" className="font-bold text-emerald-700">Security Questions</Link> to reach 100% readiness.
-                    </p>
-                </section>
-
-                <MetricCard icon={FileText} title="Documents Count" value={String(documents.length)} detail={`${documents.length} stored`} />
-                <MetricCard icon={Mail} title="Future Messages" value={String(messages.length)} detail="Scheduled" />
-
-                <section className="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-slate-200 lg:col-span-2">
-                    <div className="mb-5 flex items-center justify-between text-sm font-bold">
-                        <span>Storage Capacity</span>
-                        <span>{documents.length} files / 5 GB plan</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-blue-100">
-                        <div className="h-full rounded-full bg-emerald-700" style={{ width: `${Math.min(documents.length * 8, 100)}%` }} />
-                    </div>
-                    <div className="mt-3 flex justify-between text-xs font-bold">
-                        <span>{Math.min(documents.length * 8, 100)}% utilized</span>
-                        <Link to="/dashboard/documents" className="text-emerald-700">Manage Storage</Link>
-                    </div>
-                </section>
-            </div>
-
-            <div className="mt-6 grid gap-6 lg:grid-cols-[1.45fr_1fr]">
-                <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-                    <div className="flex items-center justify-between p-8">
-                        <h2 className="text-xl font-bold">Successor Status</h2>
-                        <Link to="/dashboard/successors" className="text-sm font-medium text-emerald-700">Manage All</Link>
-                    </div>
-                    {successor ? (
-                        <div className="grid grid-cols-[44px_1fr_auto] items-center gap-4 px-8 py-4">
-                            <span className="grid size-11 place-items-center rounded-full bg-blue-100 font-bold text-blue-700">
-                                {getInitials(successor.fullName)}
-                            </span>
-                            <div>
-                                <p className="font-bold">{successor.fullName}</p>
-                                <p className="text-sm text-slate-600">Primary Successor - {successor.relationship}</p>
-                            </div>
-                            <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase ${successor.vaultAccessGranted ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
-                                {successor.vaultAccessGranted ? "Verified" : "Pending"}
-                            </span>
-                        </div>
-                    ) : (
-                        <p className="px-8 pb-8 text-sm text-slate-600">No successor appointed yet.</p>
-                    )}
-                    <Link to="/dashboard/successors" className="flex h-16 items-center justify-center gap-2 bg-blue-50 text-sm font-bold text-emerald-700">
-                        <UserPlus size={16} />
-                        Add Successor
+                        <span className="text-base leading-none">+</span>
+                        Add Document
                     </Link>
+                }
+            />
+
+            <DashboardToolbar
+                searchValue={search}
+                onSearchChange={setSearch}
+                searchPlaceholder="Search vault contents..."
+                action={
+                    <button className="inline-flex h-10 items-center rounded-[8px] bg-[#2f6b55] px-4 text-xs font-semibold text-white transition hover:bg-[#255743]">
+                        Search
+                    </button>
+                }
+            />
+
+            <div className="mt-6 grid gap-5 xl:grid-cols-3">
+                <section className="rounded-[14px] border border-slate-200 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                    <div className="flex items-start justify-between">
+                        <h2 className="text-[1.05rem] font-semibold text-slate-900">Vault Readiness</h2>
+                        <FolderOpen size={18} className="text-slate-400" />
+                    </div>
+
+                    <div className="mt-7 flex justify-center">
+                        <ProgressRing value={readiness} />
+                    </div>
+
+                    <div className="mt-7 flex items-center justify-between border-t border-slate-200 pt-4 text-sm">
+                        <span className="text-slate-500">
+                            {Math.max(0, 3 - questions.length)} Tasks Remaining
+                        </span>
+                        <Link to="/dashboard/verification" className="font-medium text-[#2f6b55]">
+                            Review Tasks
+                        </Link>
+                    </div>
                 </section>
 
-                <div className="space-y-6">
-                    <section className="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-slate-200">
-                        <div className="flex items-center gap-4">
-                            <span className="grid size-10 place-items-center rounded-lg bg-red-50 text-red-600"><KeyRound size={18} /></span>
-                            <h2 className="text-sm font-extrabold uppercase tracking-wide">Verification Steps</h2>
-                        </div>
-                        <div className="mt-6 space-y-5 text-sm">
-                            <p>
-                                <span className={`mr-3 inline-block size-3 rounded-full ${successor ? "bg-emerald-700" : "border border-slate-400"}`} />
-                                Successor appointed
-                            </p>
-                            <p>
-                                <span className={`mr-3 inline-block size-3 rounded-full ${questions.length >= 3 ? "bg-emerald-700" : "border border-slate-400"}`} />
-                                Security questions ({questions.length}/3)
-                                <br />
-                                <Link to="/dashboard/verification" className="ml-7 text-xs text-emerald-700">Configure now</Link>
-                            </p>
-                        </div>
-                    </section>
-                    <section className="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-slate-200">
-                        <h2 className="text-sm font-extrabold uppercase tracking-wide">Recent Activity</h2>
-                        <div className="mt-6 space-y-5 border-l border-slate-200 pl-5 text-sm">
-                            {recentDocument ? (
-                                <p>
-                                    <span className="-ml-[27px] mr-4 inline-block size-3 rounded-full bg-emerald-700" />
-                                    {formatDate(recentDocument.createdAt)}
-                                    <br />
-                                    <b>Document &quot;{recentDocument.documentName}&quot; encrypted and uploaded.</b>
-                                </p>
-                            ) : (
-                                <p className="text-slate-500">Upload your first document to see activity here.</p>
-                            )}
-                            {messages[0] ? (
-                                <p>
-                                    <span className="-ml-[27px] mr-4 inline-block size-3 rounded-full bg-blue-100" />
-                                    Future message &quot;{messages[0].title}&quot; scheduled.
-                                </p>
-                            ) : null}
-                        </div>
-                    </section>
-                </div>
+                <MetricPanel
+                    icon={FileText}
+                    badge="Secured"
+                    value={documents.length}
+                    label="Critical Documents"
+                    footer={[
+                        `${documents.filter((item) => item.category === "FINANCIAL").length} Files`,
+                        `${documents.filter((item) => item.category === "LEGAL").length || documents.filter((item) => item.category === "IDENTITY").length} Files`,
+                    ]}
+                    footerLabels={["Financial", "Legal"]}
+                />
+
+                <section className="rounded-[14px] border border-slate-200 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                    <div className="flex items-start justify-between">
+                        <span className="grid size-11 place-items-center rounded-[10px] border border-slate-200 bg-slate-50 text-[#2f6b55]">
+                            <UserRound size={19} />
+                        </span>
+                        <span className="rounded-full border border-[#d5e8df] bg-[#f3fbf8] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#2f6b55]">
+                            {successor?.isVerified ? "Verified" : "Pending"}
+                        </span>
+                    </div>
+
+                    <p className="mt-10 text-[2.15rem] font-semibold tracking-[-0.04em] text-slate-900">
+                        {successor ? 1 : 0}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-600">Active Successors</p>
+
+                    <div className="mt-8 flex items-center gap-2">
+                        {successor ? (
+                            <>
+                                <div className="grid size-9 place-items-center rounded-full border border-slate-200 bg-[#f5f7f8] text-xs font-semibold text-slate-700">
+                                    {getInitials(successor.fullName)}
+                                </div>
+                                <div className="grid size-9 place-items-center rounded-full border border-dashed border-slate-300 bg-white text-slate-400">
+                                    <span className="text-lg leading-none">+</span>
+                                </div>
+                            </>
+                        ) : (
+                            <p className="text-sm text-slate-500">No active successor configured yet.</p>
+                        )}
+                    </div>
+                </section>
             </div>
+
+            <section className="mt-6 overflow-hidden rounded-[14px] border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
+                    <h2 className="text-[1.05rem] font-semibold text-slate-900">Recent Activity</h2>
+                    <button className="inline-flex items-center gap-1 text-sm font-medium text-[#2f6b55]">
+                        View Full Log
+                        <ChevronRight size={14} />
+                    </button>
+                </div>
+
+                {recentActivity.length > 0 ? (
+                    <div className="divide-y divide-slate-200">
+                        {recentActivity.map((item) => {
+                            const Icon = item.icon;
+
+                            return (
+                                <div key={item.id} className="flex items-center justify-between gap-4 px-6 py-5">
+                                    <div className="flex items-center gap-4">
+                                        <span className="grid size-10 place-items-center rounded-full border border-slate-200 bg-slate-50 text-slate-500">
+                                            <Icon size={17} />
+                                        </span>
+                                        <div>
+                                            <p className="text-sm font-medium text-slate-900">{item.title}</p>
+                                            <p className="mt-1 text-xs text-slate-500">{item.subtitle}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="text-right">
+                                        <p className="text-sm font-medium text-slate-800">{formatDate(item.date)}</p>
+                                        <p className="mt-1 text-[11px] text-slate-500">14:32 EST</p>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <div className="px-6 py-10 text-sm text-slate-500">
+                        No recent activity yet. Upload a document or add a successor to get started.
+                    </div>
+                )}
+            </section>
+
+            {search && filteredDocuments.length === 0 ? (
+                <div className="mt-4 text-sm text-slate-500">
+                    No documents matched your search.
+                </div>
+            ) : null}
         </div>
     );
 }
 
-function MetricCard({ detail, icon: Icon, title, value }) {
+function MetricPanel({
+    badge,
+    footer,
+    footerLabels,
+    icon: Icon,
+    label,
+    value,
+}) {
     return (
-        <section className="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-slate-200">
-            <div className="flex items-center gap-4">
-                <span className="grid size-10 place-items-center rounded-lg bg-emerald-50 text-emerald-700">
-                    <Icon size={18} />
+        <section className="rounded-[14px] border border-slate-200 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <div className="flex items-start justify-between">
+                <span className="grid size-11 place-items-center rounded-[10px] border border-slate-200 bg-slate-50 text-[#2f6b55]">
+                    <Icon size={19} />
                 </span>
-                <p className="text-sm font-extrabold uppercase tracking-wide">{title}</p>
+                <span className="rounded-full border border-[#d5e8df] bg-[#f3fbf8] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#2f6b55]">
+                    {badge}
+                </span>
             </div>
-            <p className="mt-6 text-4xl font-extrabold">{value} <span className="text-sm font-bold text-emerald-700">{detail}</span></p>
+
+            <p className="mt-10 text-[2.15rem] font-semibold tracking-[-0.04em] text-slate-900">
+                {value}
+            </p>
+            <p className="mt-1 text-sm text-slate-600">{label}</p>
+
+            <div className="mt-9 grid grid-cols-2 gap-3">
+                {footer.map((item, index) => (
+                    <div key={footerLabels[index]} className="rounded-[8px] border border-slate-200 bg-[#fbfcfd] px-3 py-2">
+                        <p className="text-[11px] text-slate-500">{footerLabels[index]}</p>
+                        <p className="text-sm font-medium text-slate-800">{item}</p>
+                    </div>
+                ))}
+            </div>
         </section>
+    );
+}
+
+function ProgressRing({ value }) {
+    return (
+        <div
+            className="grid size-[124px] place-items-center rounded-full"
+            style={{
+                background: `conic-gradient(#356f5a ${value}%, #e5eaec ${value}% 100%)`,
+            }}
+        >
+            <div className="grid size-[94px] place-items-center rounded-full bg-white text-center">
+                <div>
+                    <p className="text-[2rem] font-semibold tracking-[-0.04em] text-[#2f6b55]">
+                        {value}%
+                    </p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                        Complete
+                    </p>
+                </div>
+            </div>
+        </div>
     );
 }

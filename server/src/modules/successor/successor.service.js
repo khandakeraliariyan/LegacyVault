@@ -10,6 +10,24 @@ const FutureMessage = require("../futureMessage/futureMessage.model");
 
 const { createAuditLog } = require("../audit/audit.service");
 
+const normalizeEmail = (email = "") =>
+    email.trim().toLowerCase();
+
+const ensureSuccessorEmailAvailable = async (userId, email) => {
+    const existingSuccessor = await Successor.findOne({
+        email: normalizeEmail(email),
+    });
+
+    if (
+        existingSuccessor &&
+        existingSuccessor.ownerId.toString() !== userId.toString()
+    ) {
+        throw new Error(
+            "This successor email is already assigned to another vault owner."
+        );
+    }
+};
+
 const createSuccessor = async (userId, payload) => {
     const existing =
         await Successor.findOne({
@@ -22,10 +40,16 @@ const createSuccessor = async (userId, payload) => {
         );
     }
 
+    await ensureSuccessorEmailAvailable(
+        userId,
+        payload.email
+    );
+
     const successor =
         await Successor.create({
             ownerId: userId,
             ...payload,
+            email: normalizeEmail(payload.email),
         });
 
     await createAuditLog({
@@ -45,16 +69,34 @@ const getMySuccessor = async (userId) => {
 };
 
 const updateSuccessor = async (userId, payload) => {
+    if (payload.email) {
+        await ensureSuccessorEmailAvailable(
+            userId,
+            payload.email
+        );
+    }
+
     const successor =
         await Successor.findOneAndUpdate(
             {
                 ownerId: userId,
             },
-            payload,
+            {
+                ...payload,
+                ...(payload.email
+                    ? {
+                        email: normalizeEmail(payload.email),
+                    }
+                    : {}),
+            },
             {
                 new: true,
             }
         );
+
+    if (!successor) {
+        throw new Error("Successor not found");
+    }
 
     return successor;
 };

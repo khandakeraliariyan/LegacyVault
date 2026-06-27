@@ -4,12 +4,11 @@ import {
     FolderOpen,
     UserRound,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
-import DashboardToolbar from "../../components/dashboard/DashboardToolbar";
 import Loading from "../../components/common/Loading";
 import { getDocuments } from "../../services/document.service";
 import { getFinalWishes } from "../../services/finalWish.service";
@@ -19,8 +18,6 @@ import { getMySuccessor } from "../../services/successor.service";
 import { calculateVaultReadiness, formatDate, getInitials } from "../../utils/format";
 
 export default function Dashboard() {
-    const [search, setSearch] = useState("");
-
     const results = useQueries({
         queries: [
             { queryKey: ["documents"], queryFn: getDocuments },
@@ -31,17 +28,11 @@ export default function Dashboard() {
         ],
     });
 
-    const isLoading = results.some((result) => result.isLoading);
-
-    if (isLoading) {
-        return <Loading />;
-    }
-
-    const documents = results[0].data || [];
-    const messages = results[1].data || [];
-    const successor = results[2].data;
-    const questions = results[3].data || [];
-    const finalWishes = results[4].data || [];
+    const documents = results[0]?.data || [];
+    const messages = results[1]?.data || [];
+    const successor = results[2]?.data;
+    const questions = results[3]?.data || [];
+    const finalWishes = results[4]?.data || [];
 
     const readiness = calculateVaultReadiness({
         successor,
@@ -50,17 +41,11 @@ export default function Dashboard() {
         finalWishes,
     });
 
-    const filteredDocuments = useMemo(() => {
-        const query = search.trim().toLowerCase();
+    const isLoading = results.some((result) => result.isLoading);
 
-        if (!query) {
-            return documents;
-        }
-
-        return documents.filter((document) =>
-            `${document.documentName} ${document.category}`.toLowerCase().includes(query)
-        );
-    }, [documents, search]);
+    if (isLoading) {
+        return <Loading />;
+    }
 
     const recentActivity = [
         documents[0]
@@ -105,17 +90,6 @@ export default function Dashboard() {
                         <span className="text-base leading-none">+</span>
                         Add Document
                     </Link>
-                }
-            />
-
-            <DashboardToolbar
-                searchValue={search}
-                onSearchChange={setSearch}
-                searchPlaceholder="Search vault contents..."
-                action={
-                    <button className="inline-flex h-10 items-center rounded-[8px] bg-[#2f6b55] px-4 text-xs font-semibold text-white transition hover:bg-[#255743]">
-                        Search
-                    </button>
                 }
             />
 
@@ -224,12 +198,6 @@ export default function Dashboard() {
                     </div>
                 )}
             </section>
-
-            {search && filteredDocuments.length === 0 ? (
-                <div className="mt-4 text-sm text-slate-500">
-                    No documents matched your search.
-                </div>
-            ) : null}
         </div>
     );
 }

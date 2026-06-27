@@ -2,21 +2,6 @@ import { NavLink, Outlet } from "react-router-dom";
 
 import BrandLogo from "../components/common/BrandLogo";
 
-const publicNav = [
-    {
-        label: "Features",
-        href: "/#features",
-    },
-    {
-        label: "Security",
-        href: "/#security",
-    },
-    {
-        label: "Pricing",
-        href: "/#pricing",
-    },
-];
-
 export default function MainLayout() {
     return (
         <div className="app-shell min-h-screen bg-[#f7f9fb] text-slate-950">
@@ -27,27 +12,15 @@ export default function MainLayout() {
                         textClassName="text-xl"
                     />
 
-                    <nav className="hidden items-center gap-8 md:flex">
-                        {publicNav.map((item) => (
-                            <a
-                                key={item.label}
-                                href={item.href}
-                                className="text-sm font-medium text-slate-600 transition hover:text-[#0f5139]"
-                            >
-                                {item.label}
-                            </a>
-                        ))}
-                    </nav>
-
                     <div className="flex items-center gap-3">
                         <NavLink
-                            to="/login"
-                            className="hidden text-sm font-medium text-slate-600 transition hover:text-slate-950 md:inline-flex"
+                            to="/claim"
+                            className="inline-flex h-10 items-center rounded-lg border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
                         >
-                            Log In
+                            Claim
                         </NavLink>
                         <NavLink
-                            to="/register"
+                            to="/login"
                             className="inline-flex h-10 items-center rounded-lg bg-[#235842] px-5 text-sm font-bold text-white transition hover:bg-[#194634]"
                         >
                             Get Started

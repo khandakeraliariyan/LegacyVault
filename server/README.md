@@ -1,134 +1,51 @@
 # LegacyVault Backend
 
-## Overview
-
-LegacyVault is a MERN-based backend for a secure digital inheritance platform. It allows users to securely store important documents, create final wishes, assign a trusted successor, define custom verification questions, and transfer access after an admin-approved verification workflow.
+The LegacyVault backend is a Node.js and Express API for secure digital inheritance workflows. It manages users, successors, verification questions, document uploads, final wishes, future messages, claims, admin review, and audit logs.
 
 ## Tech Stack
 
 - Node.js
-- Express.js
+- Express 5
 - MongoDB + Mongoose
-- Firebase Authentication (Admin SDK)
+- Firebase Admin SDK
 - Cloudinary
 - Multer
+- JWT
 - bcryptjs
 - Zod
 - dotenv
+- morgan
 
----
-
-# Features
-
-## Authentication
-- Firebase Authentication
-- Protected Routes
-- Role-based Authorization
-- User Registration on First Login
-
-## User
-- User Profile
-- Role Management (USER, ADMIN)
-
-## Successor
-- Create Successor
-- Update Successor
-- Delete Successor
-- View Successor
-- Vault Access Status
-
-## Verification Questions
-- Custom Questions
-- bcrypt Hashed Answers
-- Secure Verification
-
-## Document Vault
-- Cloudinary Upload
-- Categorized Documents
-- Delete Documents
-- Retrieve Documents
-
-Categories:
-- Identity
-- Financial
-- Property
-- Insurance
-- Business
-- Digital Assets
-
-## Final Wishes
-- Create
-- Update
-- Delete
-- Retrieve
-
-Categories:
-- Personal
-- Family
-- Asset
-- Business
-- Other
-
-## Future Messages
-- Text
-- Audio
-- Video
-- Released after successful claim approval
-
-## Legacy Claim System
-- Submit Claim
-- Upload Identity Document
-- Answer Verification Questions
-- Automatic Verification Score
-- Under Review / Approved / Rejected
-
-## Admin
-- Dashboard
-- Pending Claims
-- Approve Claim
-- Reject Claim
-- Audit Logs
-
-## Audit Logs
-Tracks:
-- Successor Created
-- Question Created
-- Document Uploaded
-- Claim Submitted
-- Claim Approved
-- Claim Rejected
-
----
-
-# Folder Structure
+## Folder Structure
 
 ```text
 src/
-│
-├── config/
-├── constants/
-├── middlewares/
-├── modules/
-│   ├── admin/
-│   ├── audit/
-│   ├── auth/
-│   ├── claim/
-│   ├── document/
-│   ├── finalWish/
-│   ├── futureMessage/
-│   ├── question/
-│   ├── successor/
-│   └── user/
-├── routes/
-├── utils/
-├── app.js
-└── server.js
+|-- config/        # Database, Firebase, Cloudinary, and Multer config
+|-- constants/     # Shared constants such as roles
+|-- middlewares/   # Auth, role, and error middleware
+|-- modules/       # Feature modules
+|   |-- admin/
+|   |-- audit/
+|   |-- auth/
+|   |-- claim/
+|   |-- document/
+|   |-- finalWish/
+|   |-- futureMessage/
+|   |-- question/
+|   |-- successor/
+|   |-- user/
+|-- routes/        # API route registration
+|-- app.js         # Express app setup
+|-- server.js      # Server bootstrap and MongoDB connection
 ```
 
-# Environment Variables
+## Environment Variables
+
+Create a `.env` file inside `server/`:
 
 ```env
 PORT=5000
+CLIENT_URL=http://localhost:5173
 DATABASE_URL=
 JWT_SECRET=
 
@@ -137,108 +54,153 @@ CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
 ```
 
-Firebase Admin SDK:
+Add the Firebase Admin SDK service account file at:
 
-```
-firebase/
-└── serviceAccountKey.json
-```
-
-Add to `.gitignore`:
-
-```gitignore
-firebase/serviceAccountKey.json
-.env
-node_modules
+```text
+server/firebase/serviceAccountKey.json
 ```
 
-# API Summary
+This file is required by `src/config/firebase.js` and should never be committed.
 
-## Auth
-- POST /api/v1/auth/firebase-login
-- GET /api/v1/auth/me
-
-## Successor
-- POST /api/v1/successors
-- GET /api/v1/successors/my-successor
-- PATCH /api/v1/successors
-- DELETE /api/v1/successors
-- GET /api/v1/successors/access
-
-## Questions
-- POST /api/v1/questions
-- GET /api/v1/questions
-- DELETE /api/v1/questions/:id
-
-## Documents
-- POST /api/v1/documents
-- GET /api/v1/documents
-- DELETE /api/v1/documents/:id
-
-## Final Wishes
-- POST /api/v1/final-wishes
-- GET /api/v1/final-wishes
-- PATCH /api/v1/final-wishes/:id
-- DELETE /api/v1/final-wishes/:id
-
-## Future Messages
-- POST /api/v1/future-messages
-- GET /api/v1/future-messages
-- DELETE /api/v1/future-messages/:id
-
-## Claims
-- POST /api/v1/claims/submit
-
-## Admin
-- GET /api/v1/admin/dashboard
-- GET /api/v1/admin/claims
-- PATCH /api/v1/admin/claims/:id/approve
-- PATCH /api/v1/admin/claims/:id/reject
-- GET /api/v1/admin/audit-logs
-
-# Claim Workflow
-
-1. User registers via Firebase
-2. User creates successor
-3. User adds verification questions
-4. User uploads documents
-5. User writes final wishes
-6. User creates future messages
-7. Successor submits claim
-8. System verifies answers
-9. Claim enters UNDER_REVIEW
-10. Admin approves claim
-11. Vault access granted
-12. Future messages released
-
-# Security
-
-- Firebase Authentication
-- bcrypt hashed verification answers
-- Cloudinary secure storage
-- Protected routes
-- Role-based authorization
-- Audit logging
-
-# Installation
+## Installation
 
 ```bash
 npm install
+```
+
+## Development
+
+```bash
 npm run dev
 ```
 
-# Future Improvements
+The API runs on:
 
-- Notifications
-- Email delivery
-- Multi-successor support
-- Two-factor authentication
-- Scheduled reminders
+```text
+http://localhost:5000
+```
 
-# License
+The API base path is:
 
-MIT License
+```text
+http://localhost:5000/api/v1
+```
 
-# Author
+## Production Start
 
-Developed as the backend for the LegacyVault Hackathon Project.
+```bash
+npm start
+```
+
+## API Health Check
+
+```http
+GET /
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "message": "LegacyVault API Running"
+}
+```
+
+## API Routes
+
+All module routes are mounted under `/api/v1`.
+
+### Auth
+
+- `POST /auth/firebase-login`
+- `POST /auth/login`
+- `POST /auth/register`
+- `GET /auth/me`
+- `PATCH /auth/me`
+- `PATCH /auth/me/photo`
+
+### Successors
+
+- `POST /successors`
+- `GET /successors/my-successor`
+- `PATCH /successors`
+- `DELETE /successors`
+- `GET /successors/access`
+- `GET /successors/vault`
+
+### Verification Questions
+
+- `POST /questions`
+- `GET /questions`
+- `DELETE /questions/:id`
+
+### Documents
+
+- `POST /documents`
+- `GET /documents`
+- `GET /documents/:id/open`
+- `GET /documents/:id/download`
+- `PATCH /documents/:id/status`
+- `DELETE /documents/:id`
+
+### Final Wishes
+
+- `POST /final-wishes`
+- `GET /final-wishes`
+- `PATCH /final-wishes/:id`
+- `DELETE /final-wishes/:id`
+
+### Future Messages
+
+- `POST /future-messages`
+- `GET /future-messages`
+- `PATCH /future-messages/:id`
+- `DELETE /future-messages/:id`
+
+### Claims
+
+- `GET /claims/verification-questions`
+- `GET /claims/mine`
+- `POST /claims/submit`
+
+### Admin
+
+- `GET /admin/dashboard`
+- `GET /admin/claims`
+- `PATCH /admin/claims/:id/approve`
+- `PATCH /admin/claims/:id/reject`
+- `GET /admin/audit-logs`
+
+## Authentication and Authorization
+
+- Firebase-authenticated users can log in through `/auth/firebase-login`
+- Email/password login and registration are also exposed through backend auth routes
+- Protected routes use `Authorization: Bearer <token>`
+- Admin routes require the `ADMIN` role
+- Role constants are defined in `src/constants/roles.js`
+
+## Claim Workflow
+
+1. A user registers and creates their vault.
+2. The user adds a successor, verification questions, documents, final wishes, and future messages.
+3. A successor submits a claim and answers verification questions.
+4. The system scores the verification answers.
+5. The claim enters admin review.
+6. An admin approves or rejects the claim.
+7. Approved claims unlock released vault access for the successor.
+
+## Security Notes
+
+- Verification answers are hashed with bcrypt.
+- Firebase Admin verifies Firebase-authenticated users.
+- API routes use auth and role middleware where required.
+- Uploaded files are handled through Multer and Cloudinary.
+- Important events are recorded through audit logs.
+
+## Scripts
+
+```bash
+npm run dev   # Start with nodemon
+npm start     # Start with node
+```

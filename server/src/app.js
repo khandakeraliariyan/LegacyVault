@@ -11,7 +11,7 @@ const app = express();
 
 const allowedOrigins = [
     "http://localhost:5173",
-    "https://legacy-vault-roan.vercel.app",
+    process.env.CLIENT_URL,
 ];
 
 app.use(

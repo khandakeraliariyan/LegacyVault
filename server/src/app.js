@@ -9,7 +9,7 @@ const errorMiddleware = require("./middlewares/error.middleware");
 
 const app = express();
 
-const allowedOrigin = [
+const allowedOrigins = [
     "http://localhost:5173",
     "https://legacy-vault-roan.vercel.app",
 ];
@@ -17,7 +17,7 @@ const allowedOrigin = [
 app.use(
     cors({
         origin: function (origin, callback) {
-            // Allow requests without an Origin header (Postman, mobile apps, etc.)
+            // Allow Postman and server-to-server requests
             if (!origin) return callback(null, true);
 
             if (allowedOrigins.includes(origin)) {

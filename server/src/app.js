@@ -9,13 +9,23 @@ const errorMiddleware = require("./middlewares/error.middleware");
 
 const app = express();
 
-const allowedOrigin =
-    process.env.CLIENT_URL ||
-    "http://localhost:5173";
+const allowedOrigin = [
+    "http://localhost:5173",
+    "https://legacy-vault-roan.vercel.app/",
+];
 
 app.use(
     cors({
-        origin: allowedOrigin,
+        origin: function (origin, callback) {
+            // Allow requests without an Origin header (Postman, mobile apps, etc.)
+            if (!origin) return callback(null, true);
+
+            if (allowedOrigins.includes(origin)) {
+                return callback(null, true);
+            }
+
+            return callback(new Error("Not allowed by CORS"));
+        },
         credentials: true,
     })
 );
